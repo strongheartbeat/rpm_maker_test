@@ -24,6 +24,8 @@ fstream
     .on('close', _end)
     .on('error', _error)
 
+var arStream = CombinedStream.create();
+
 function _end() {
     console.log(path.basename(tarFile) + " has been made...");
     this.on('lead', _addLead);
@@ -59,12 +61,11 @@ function _addLead() {
 
     // console.log("typeof('test'): ", typeof 'test');
     // console.log("typeof(0x1234): ", typeof 0x1234);
-    var arStream = CombinedStream.create();
     console.log("Combining lead and tar.gz");
     arStream.append(buf);
 
     console.log("Adding Signature Header...");
-    arStream.append(_getSigHeader());
+    _addSigHeader();
 
     var tarStream = fstream.Reader({path: tarFile, type: 'File'});
     arStream.append(tarStream);
@@ -73,7 +74,7 @@ function _addLead() {
     arStream.pipe(output);
 }
 
-function _getSigHeader() {
+function _addSigHeader() {
     // Header structure header (16)
     // Index Entries (16 * N)
     // Store
@@ -84,21 +85,24 @@ function _getSigHeader() {
     entries.push(_makeEntry(sig.TAG.MD5, 'e5658a423a05b679284eeb7cf8b9827d'));
 
     var storeSize = 0;
-    for(entry in entries) {
+    for(i in entries) {
          // console.log("ent:", util.inspect(entries[ent]));
-         storeSize += (entry.size * entry.count);
+         storeSize += (entries[i].size * entries[i].count);
     }
     console.log("Signature Header ...")
     var HeadStHeaderSize = 0;
     for ( f in HeadStHeader.fieldSize ) {
         HeadStHeaderSize += HeadStHeader.fieldSize[f]
     }
+    console.log("(storeSize):", storeSize);
     console.log("Signature Header Size:", HeadStHeaderSize);
     var sigHSbuf = new Buffer(HeadStHeaderSize);
     _writeToBuf(HeadStHeader, sigHSbuf, 'magic', 0x8EADE801);
     _writeToBuf(HeadStHeader, sigHSbuf, 'reserved', ' ');
-    _writeToBuf(HeadStHeader, sigHSbuf, 'entriesCount', entry.length);
+    _writeToBuf(HeadStHeader, sigHSbuf, 'entriesCount', entries.length);
     _writeToBuf(HeadStHeader, sigHSbuf, 'storeSize', storeSize);
+
+    arStream.append(sigHSbuf);
 
     // return sigHSbuf;
     var IndexEntrySize = 0;
@@ -112,12 +116,31 @@ function _getSigHeader() {
         var idxEntryBuf = new Buffer(IndexEntrySize);
         _writeToBuf(IndexEntry, idxEntryBuf, 'tag', entries[i].tag.code);
         _writeToBuf(IndexEntry, idxEntryBuf, 'type', entries[i].tag.type);
-        var offset = (i === 0)? 0 : ( (entries[i - 1].size) * (entries[i - 1].count) );
-        _writeToBuf(IndexEntry, idxEntryBuf, 'offset', offset);
+        entries[i].offset = (i === 0)? 0 : ( (entries[i - 1].size) * (entries[i - 1].count) );
+        _writeToBuf(IndexEntry, idxEntryBuf, 'offset', entries[i].offset);
         _writeToBuf(IndexEntry, idxEntryBuf, 'count', entries[i].count);
         idxEntriesBuf.push(idxEntriesBuf);
+        arStream.append(idxEntryBuf);
     }
-    return sigHSbuf + idxEntriesBuf.join();
+
+    var writeIntFunc = 'write';
+    var writeIntFuncs = {
+        1: 'writeInt8',
+        2: 'writeInt16BE',
+        4: 'writeInt32BE'
+    };
+
+    var storeBuf = new Buffer(storeSize);
+    var baseOff = IndexEntrySize * entries.length;
+    for(i in entries) {
+        var val = entries[i].value;
+        if (typeof val !== 'string') {
+            if (writeIntFuncs[entries[i].size]) writeIntFunc = writeIntFuncs[entries[i].size];
+            else console.error("Not found !!", fieldSize);
+        }
+        storeBuf[writeIntFunc](val, baseOff + entries[i].offset, val);
+    }
+    arStream.append(storeBuf);
 }
 
 function _makeEntry(tag, value) {
