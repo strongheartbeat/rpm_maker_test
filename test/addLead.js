@@ -153,21 +153,34 @@ function _addHeader() {
 
     var entries = [];
     var header = new Header();
+    // entries.push(_makeEntry(header.TAG.HEADERI18NTABLE, 'C'));
+    entries.push(_makeEntry(header.TAG.BUILDTIME, 123456));
+    entries.push(_makeEntry(header.TAG.RPMVERSION, '4.4.2'));
+    entries.push(_makeEntry(header.TAG.PAYLOADFORMAT, 'cpio'));
+    entries.push(_makeEntry(header.TAG.PAYLOADCOMPRESSOR, 'gzip'));
+
     entries.push(_makeEntry(header.TAG.NAME, 'app-test'));
     entries.push(_makeEntry(header.TAG.VERSION, '3.0'));
-    entries.push(_makeEntry(header.TAG.OS, 'windows'));
+    entries.push(_makeEntry(header.TAG.RELEASE, 'release'));
+    entries.push(_makeEntry(header.TAG.EPOCH, '2015'));
+    entries.push(_makeEntry(header.TAG.BUILDHOST, 'localhost'));
+
+    entries.push(_makeEntry(header.TAG.ARCH, 'NOARCH'));
+    entries.push(_makeEntry(header.TAG.OS, 'LINUX'));
+    entries.push(_makeEntry(header.TAG.PLATFORM, 'NOARCH-LINUX'));
+    entries.push(_makeEntry(header.TAG.RHNPLATFORM, 'NOARCH'));
 
     var storeSize = 0;
     for(i in entries) {
          storeSize += (entries[i].size * entries[i].count);
     }
-    console.log("Signature Header ...")
+    console.log("Header ...")
     var HeadStHeaderSize = 0;
     for ( f in HeadStHeader.fieldSize ) {
         HeadStHeaderSize += HeadStHeader.fieldSize[f]
     }
     console.log("(storeSize):", storeSize);
-    console.log("Signature Header Size:", HeadStHeaderSize);
+    console.log("Header Size:", HeadStHeaderSize);
     var hSbuf = new Buffer(HeadStHeaderSize);
     _writeToBuf(HeadStHeader, hSbuf, 'magic', 0x8EADE801);
     _writeToBuf(HeadStHeader, hSbuf, 'reserved', ' ');
