@@ -26,12 +26,39 @@ AbstractHeader.prototype = {
         console.log(this.TYPE);
     },
 
-    read : function(inStream) {
-        // return number of entries found
-    }
-
-    write : function(outStream) {
-
+    setTagSize : function(obj, type, value) {
+        switch (type) {
+            case TagType.NULL: 
+            case TagType.CHAR:
+            case TagType.INT8:
+            case TagType.BIN:
+                obj.size = 1; obj.count = value.length;
+                break;
+            case TagType.INT16:
+                obj.size = 2; obj.count = 1; break;
+            case TagType.INT32:
+                obj.size = 4; obj.count = 1; break;
+            case TagType.INT64:
+                obj.size = 8; obj.count = 1; break;
+            case TagType.STRING:
+            case TagType.I18NSTRING:
+                process.exit(1);
+                obj.count = 1; 
+                obj.size = (value.length + 1); break;
+            case TagType.ASN1:
+            case TagType.OPENPGP:
+                console.log("Unknown. ASN1 or OPENPGP");
+                obj.size = 1; obj.count = 1; break;
+            case TagType.STRING_ARRAY:
+                if (! value instanceof Array) console.error("Error, STRING_ARRAY should be string array value"); process.exit(1);
+                var size = 0;
+                for (v in value) size += (v.length + 1);
+                obj.size = size;
+                obj.count = value.length;
+                break;
+            default:
+                break;
+        }
     }
 }
 
