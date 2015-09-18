@@ -4,6 +4,7 @@ var Lead = require('../Lead')
     , fstream = require('fstream')
     , tar = require('tar')
     , zlib = require('zlib')
+    , cpio = require('cpio-stream')
     , CombinedStream = require('combined-stream')
     , EventEmitter = require('events').EventEmitter
     , Signature = require('../Signature')
@@ -70,8 +71,10 @@ function _addLead() {
 
     _addHeader();
 
-    var tarStream = fstream.Reader({path: tarFile, type: 'File'});
-    arStream.append(tarStream);
+    //var tarStream = fstream.Reader({p4th: tarFile, type: 'File'});
+    var cpioFile = path.join(__dirname, 'test.cpio');
+    var tarStream = fstream.Reader({path: cpioFile, type: 'File'});
+    arStream.append(tarStream.pipe(zlib.createGzip()));
 
     var output = fstream.Writer(path.join(__dirname, rpmName));
     arStream.pipe(output);
