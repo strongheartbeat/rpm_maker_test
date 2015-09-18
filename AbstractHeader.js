@@ -42,7 +42,6 @@ AbstractHeader.prototype = {
                 obj.size = 8; obj.count = 1; break;
             case TagType.STRING:
             case TagType.I18NSTRING:
-                process.exit(1);
                 obj.count = 1; 
                 obj.size = (value.length + 1); break;
             case TagType.ASN1:

@@ -119,7 +119,7 @@ function _addSigHeader() {
         var idxEntryBuf = new Buffer(IndexEntrySize);
         _writeToBuf(IndexEntry, idxEntryBuf, 'tag', entries[i].tag.code);
         _writeToBuf(IndexEntry, idxEntryBuf, 'type', entries[i].tag.type);
-        entries[i].offset = (i === 0)? 0 : ( (entries[i - 1].size) * (entries[i - 1].count) );
+        entries[i].offset = (i === 0)? 0 : ( (entries[i - 1].offset + entries[i - 1].size) * (entries[i - 1].count) );
         _writeToBuf(IndexEntry, idxEntryBuf, 'offset', entries[i].offset);
         _writeToBuf(IndexEntry, idxEntryBuf, 'count', entries[i].count);
         idxEntriesBuf.push(idxEntriesBuf);
@@ -140,10 +140,17 @@ function _addSigHeader() {
         if (typeof val !== 'string') {
             if (writeIntFuncs[entries[i].size]) writeIntFunc = writeIntFuncs[entries[i].size];
             else console.error("Not found !!", fieldSize);
+        } else {
+            val = val + '\0';
+            writeIntFunc = 'write';
         }
         storeBuf[writeIntFunc](val, entries[i].offset, entries[i].size);
     }
     arStream.append(storeBuf);
+
+    var padBuf = new Buffer(4); //padding test
+    padBuf.write(' ', 0, 4);
+    arStream.append(padBuf);
 }
 
 function _addHeader() {
@@ -172,7 +179,7 @@ function _addHeader() {
 
     var storeSize = 0;
     for(i in entries) {
-         storeSize += (entries[i].size * entries[i].count);
+         storeSize += entries[i].size;
     }
     console.log("Header ...")
     var HeadStHeaderSize = 0;
@@ -200,7 +207,7 @@ function _addHeader() {
         var idxEntryBuf = new Buffer(IndexEntrySize);
         _writeToBuf(IndexEntry, idxEntryBuf, 'tag', entries[i].tag.code);
         _writeToBuf(IndexEntry, idxEntryBuf, 'type', entries[i].tag.type);
-        entries[i].offset = (i === 0)? 0 : ( (entries[i - 1].size) * (entries[i - 1].count) );
+        entries[i].offset = (i === 0)? 0 : ( entries[i - 1].offset + (entries[i - 1].size) * (entries[i - 1].count) );
         _writeToBuf(IndexEntry, idxEntryBuf, 'offset', entries[i].offset);
         _writeToBuf(IndexEntry, idxEntryBuf, 'count', entries[i].count);
         idxEntriesBuf.push(idxEntriesBuf);
@@ -215,15 +222,20 @@ function _addHeader() {
     };
 
     var storeBuf = new Buffer(storeSize);
+    console.log("storeBuf:", storeBuf);
     // var baseOff = IndexEntrySize * entries.length;
     for(i in entries) {
         var val = entries[i].value;
         if (typeof val !== 'string') {
             if (writeIntFuncs[entries[i].size]) writeIntFunc = writeIntFuncs[entries[i].size];
             else console.error("Not found !!", fieldSize);
+        } else {
+            val = val + '\0';
+            writeIntFunc = 'write';
         }
-        // console.log("writeIntFuncs:", entries[i].offset);
+        console.log("writeIntFuncs:", entries[i].offset, ",size:", entries[i].size, ",value:", entries[i].value);
         storeBuf[writeIntFunc](val, entries[i].offset, entries[i].size);
+        console.log("storeBuf:", storeBuf);
     }
     arStream.append(storeBuf);
 }
