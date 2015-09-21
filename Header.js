@@ -167,7 +167,56 @@ var fs = require('fs'),
             FILECONTEXTS: {
                 code: 1147,
                 type: this.TYPE.STRING_ARRAY
-            }
+            },
+
+            PREINSCRIPT: {
+                code: 1023,
+                type: this.TYPE.STRING
+            },
+            POSTINSCRIPT: {
+                code: 1024,
+                type: this.TYPE.STRING
+            },
+            PREUNSCRIPT: {
+                code: 1025,
+                type: this.TYPE.STRING
+            },
+            POSTUNSCRIPT: {
+                code: 1026,
+                type: this.TYPE.STRING
+            },
+            PREINPROG: {
+                code: 1085,
+                type: this.TYPE.STRING
+            },
+            POSTINPROG: {
+                code: 1086,
+                type: this.TYPE.STRING
+            },
+            PREUNPROG: {
+                code: 1087,
+                type: this.TYPE.STRING
+            },
+            POSTUNPROG: {
+                code: 1088,
+                type: this.TYPE.STRING
+            },
+            PRETRANSSCRIPT: {
+                code: 1151,
+                type: this.TYPE.STRING
+            },
+            POSTTRANSSCRIPT: {
+                code: 1152,
+                type: this.TYPE.STRING
+            },
+            PRETRANSPROG: {
+                code: 1153,
+                type: this.TYPE.STRING
+            },
+            POSTTRANSPROG: {
+                code: 1154,
+                type: this.TYPE.STRING
+            }         
         };
     }
 

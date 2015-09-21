@@ -71,7 +71,7 @@ function _addLead() {
 
     _addHeader();
 
-    //var tarStream = fstream.Reader({p4th: tarFile, type: 'File'});
+    // var tarStream = fstream.Reader({path: tarFile, type: 'File'});
     var cpioFile = path.join(__dirname, 'test.cpio');
     var tarStream = fstream.Reader({path: cpioFile, type: 'File'});
     arStream.append(tarStream.pipe(zlib.createGzip()));
@@ -166,14 +166,16 @@ function _addHeader() {
     var entries = [];
     var header = new Header();
     // entries.push(_makeEntry(header.TAG.HEADERI18NTABLE, 'C'));
-    entries.push(_makeEntry(header.TAG.BUILDTIME, 123456));
+    entries.push(_makeEntry(header.TAG.BUILDTIME, 321321)); // Fix!!
     entries.push(_makeEntry(header.TAG.RPMVERSION, '4.4.2'));
-    entries.push(_makeEntry(header.TAG.PAYLOADFORMAT, 'cpio'));
+    entries.push(_makeEntry(header.TAG.PAYLOADFORMAT, 'tar'));
+    // entries.push(_makeEntry(header.TAG.PAYLOADFORMAT, 'cpio'));
     entries.push(_makeEntry(header.TAG.PAYLOADCOMPRESSOR, 'gzip'));
 
     entries.push(_makeEntry(header.TAG.NAME, 'app-test'));
     entries.push(_makeEntry(header.TAG.VERSION, '3.0'));
     entries.push(_makeEntry(header.TAG.RELEASE, '1'));
+    //entries.push(_makeEntry(header.TAG.BUILDTIME, Math.floor(new Date().getTime() /1000))); //error ?
     //entries.push(_makeEntry(header.TAG.EPOCH, '2015'));
     entries.push(_makeEntry(header.TAG.BUILDHOST, 'localhost'));
 
