@@ -168,8 +168,8 @@ function _addHeader() {
     // entries.push(_makeEntry(header.TAG.HEADERI18NTABLE, 'C'));
     entries.push(_makeEntry(header.TAG.BUILDTIME, 321321)); // Fix!!
     entries.push(_makeEntry(header.TAG.RPMVERSION, '4.4.2'));
-    entries.push(_makeEntry(header.TAG.PAYLOADFORMAT, 'tar'));
-    // entries.push(_makeEntry(header.TAG.PAYLOADFORMAT, 'cpio'));
+    // entries.push(_makeEntry(header.TAG.PAYLOADFORMAT, 'tar'));
+    entries.push(_makeEntry(header.TAG.PAYLOADFORMAT, 'cpio'));
     entries.push(_makeEntry(header.TAG.PAYLOADCOMPRESSOR, 'gzip'));
 
     entries.push(_makeEntry(header.TAG.NAME, 'app-test'));
