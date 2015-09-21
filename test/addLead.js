@@ -173,8 +173,8 @@ function _addHeader() {
 
     entries.push(_makeEntry(header.TAG.NAME, 'app-test'));
     entries.push(_makeEntry(header.TAG.VERSION, '3.0'));
-    entries.push(_makeEntry(header.TAG.RELEASE, 'release'));
-    entries.push(_makeEntry(header.TAG.EPOCH, '2015'));
+    entries.push(_makeEntry(header.TAG.RELEASE, '1'));
+    //entries.push(_makeEntry(header.TAG.EPOCH, '2015'));
     entries.push(_makeEntry(header.TAG.BUILDHOST, 'localhost'));
 
     entries.push(_makeEntry(header.TAG.ARCH, 'NOARCH'));

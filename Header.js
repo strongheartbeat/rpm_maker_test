@@ -73,15 +73,15 @@ var fs = require('fs'),
                 type: this.TYPE.STRING
             },
             OS: {
-                code: 1010,
+                code: 1021,
                 type: this.TYPE.STRING
             },
             ARCH: {
-                code: 1010,
+                code: 1022,
                 type: this.TYPE.STRING
             },
             SOURCERPM: {
-                code: 1010,
+                code: 1044,
                 type: this.TYPE.STRING
             },
             FILEVERIFYFLAGS: {
