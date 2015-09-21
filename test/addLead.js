@@ -47,16 +47,16 @@ function _addLead() {
     console.log("leadSize:", leadSize);
 
     console.log("Writing lead header to buffer...");
-    var rpmName = 'app-test.rpm'
+    var rpmName = 'app-test-12345678901234567890.rpm';
     var buf = new Buffer(leadSize);
     _writeToBuf(Lead, buf, 'magic', 0xEDABEEDB);
-    _writeToBuf(Lead, buf, 'major', 1);
-    _writeToBuf(Lead, buf, 'minor', 3);
+    _writeToBuf(Lead, buf, 'major', 3);
+    _writeToBuf(Lead, buf, 'minor', 0);
     _writeToBuf(Lead, buf, 'type', 0);
     _writeToBuf(Lead, buf, 'archnum', 1);
     _writeToBuf(Lead, buf, 'name', rpmName);
     _writeToBuf(Lead, buf, 'osnum', 1);
-    _writeToBuf(Lead, buf, 'signature_type', 1);
+    _writeToBuf(Lead, buf, 'signature_type', 5);
     _writeToBuf(Lead, buf, 'reserved', ' ');
 
     console.log("buf:", buf);
@@ -87,8 +87,10 @@ function _addSigHeader() {
 
     var entries = [];
     var sig = new Signature();
-    entries.push(_makeEntry(sig.TAG.SIGSIZE, 29458));
-    entries.push(_makeEntry(sig.TAG.MD5, 'e5658a423a05b679284eeb7cf8b9827d'));
+    //entries.push(_makeEntry(sig.TAG.SIGSIZE, 29458));
+    //entries.push(_makeEntry(sig.TAG.MD5, 'e5658a423a05b679284eeb7cf8b9827d'));
+    entries.push(_makeEntry(sig.TAG.LEGACY_SIGSIZE, 29458));
+    //entries.push(_makeEntry(sig.TAG.LEGACY_MD5, 'e5658a423a05b679284eeb7cf8b9827d'));
 
     var storeSize = 0;
     for(i in entries) {
@@ -104,7 +106,7 @@ function _addSigHeader() {
     console.log("Signature Header Size:", HeadStHeaderSize);
     var sigHSbuf = new Buffer(HeadStHeaderSize);
     _writeToBuf(HeadStHeader, sigHSbuf, 'magic', 0x8EADE801);
-    _writeToBuf(HeadStHeader, sigHSbuf, 'reserved', ' ');
+    _writeToBuf(HeadStHeader, sigHSbuf, 'reserved', '');
     _writeToBuf(HeadStHeader, sigHSbuf, 'entriesCount', entries.length);
     _writeToBuf(HeadStHeader, sigHSbuf, 'storeSize', storeSize);
 
@@ -152,7 +154,7 @@ function _addSigHeader() {
     arStream.append(storeBuf);
 
     var padBuf = new Buffer(4); //padding test
-    padBuf.write(' ', 0, 4);
+    padBuf.write('\x00', 0, 4);
     arStream.append(padBuf);
 }
 
@@ -193,7 +195,7 @@ function _addHeader() {
     console.log("Header Size:", HeadStHeaderSize);
     var hSbuf = new Buffer(HeadStHeaderSize);
     _writeToBuf(HeadStHeader, hSbuf, 'magic', 0x8EADE801);
-    _writeToBuf(HeadStHeader, hSbuf, 'reserved', ' ');
+    _writeToBuf(HeadStHeader, hSbuf, 'reserved', '');
     _writeToBuf(HeadStHeader, hSbuf, 'entriesCount', entries.length);
     _writeToBuf(HeadStHeader, hSbuf, 'storeSize', storeSize);
 
@@ -268,6 +270,11 @@ function _writeToBuf(Ref, buf, fName, value) {
         if (writeIntFuncs[fieldSize]) writeIntFunc = writeIntFuncs[fieldSize];
         else console.error("Not found !!", fieldSize);
     }
-    // console.log("off:", fieldOff, ",", "value:", value, "writeIntFunc:", writeIntFunc);
+    console.log("off:", fieldOff, ",", "value:", value, "writeIntFunc:", writeIntFunc);
     buf[writeIntFunc](value, fieldOff, fieldSize);
+    if (writeIntFunc === 'write' 
+        && value.length < fieldSize) {
+        buf['fill']('\x00', (fieldOff + value.length));
+    //console.log("buf[fieldOff + value.length]:", fieldOff + value.length);
+    }
 }
