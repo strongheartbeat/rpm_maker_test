@@ -45,18 +45,29 @@ Rpm.prototype = {
         // console.log("[ByJunil-sig] ", Buffer.concat(sigBufs));
 
         // header
-        header.createEntry("NAME", rpmName);
         header.createEntry("BUILDTIME", Math.floor(new Date().getTime()/1000));
-        header.createEntry("VERSION", "3.0");
+        header.createEntry("RPMVERSION", "4.4.2");
+        header.createEntry("PAYLOADFORMAT", "cpio");
+        header.createEntry("PAYLOADCOMPRESSOR", "gzip");
+        header.createEntry("NAME", "wow");
+        header.createEntry("VERSION", "1.0");
         header.createEntry("RELEASE", "1");
+        // header.createEntry("EPOCH", 0);
+
         header.createEntry("BUILDHOST", "localhost");
         header.createEntry("SIZE", 0);
-        header.createEntry("ARCH", "NOARCH");
-        header.createEntry("OS", "LINUX");
-        header.createEntry("PLATFORM", "LINUX");
-        header.createEntry("OS", "NOARCH-LINUX");
-        header.createEntry("RHNPLATFORM", "NOARCH");
+        header.createEntry("ARCH", "noarch");
+        header.createEntry("OS", "linux");
+        header.createEntry("PLATFORM", "noarch-linux");
+        header.createEntry("RHNPLATFORM", "noarch");
         header.createEntry("LICENSE", "MIT");
+        header.createEntry("PAYLOADFLAGS", "9");   
+
+        // header.createEntry("PROVIDENAME", ["wow"]);
+        // header.createEntry("PROVIDEVERSION", ["0:1.0-1"]);  
+        // header.createEntry("PROVIDEFLAGS", 0x08);
+        // header.createEntry("PROVIDEFLAGS", 0);
+
         header.createBuffer();
         var headerBufs = [].concat(header.headBuf).concat(header.entriesBuf).concat(header.storeBuf);
         // console.log("[ByJunil-header] ", Buffer.concat(headerBufs));

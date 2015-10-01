@@ -179,6 +179,9 @@ Header.prototype = {
             2: 'writeUInt16BE',
             4: 'writeUInt32BE'
         };
+        if (value instanceof Array) {
+            value = value.join('\0');
+        }
         if (typeof value !== 'string') {
             if (writeIntFuncs[fieldSize]) writeFunc = writeIntFuncs[fieldSize];
             else console.error("Not found !!", fieldSize);
@@ -196,6 +199,9 @@ Header.prototype = {
             2: 'writeUInt16BE',
             4: 'writeUInt32BE'
         };
+        if (value instanceof Array) {
+            value = value.join('\0');
+        }
         if (typeof value !== 'string') {
             if (writeIntFuncs[fieldSize]) writeFunc = writeIntFuncs[fieldSize];
             else console.error("Not found !!", fieldSize);
