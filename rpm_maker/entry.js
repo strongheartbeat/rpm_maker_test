@@ -46,7 +46,7 @@ var types =
 };
 
 Object.keys(types).forEach(function (t) {
-    types[types[t]] = types[types[t]] || types[t];
+    types[types[t]] = types[types[t]] || t;
 });
 
 var typeSize = {};
@@ -58,7 +58,8 @@ typeSize["INT64"] = 8;
 
 function getBufferSize(type, value) {
     var size = 0;
-    if (typeSize(type)) return typeSize(type);
+    if (types[type]) type = types[type];
+    if (typeSize[type]) return typeSize[type];
     switch (type) {
         case "CHAR":
         case "BIN": 
@@ -72,6 +73,7 @@ function getBufferSize(type, value) {
             for (v in value) {
                 size += (value[v].length + 1);
             }
+            break;
         case "I18NSTRING":
         case "ASN1":
         case "OPENPGP":
@@ -84,7 +86,8 @@ function getBufferSize(type, value) {
 
 function getCount(type, value) {
     var count = 0;
-    if (typeSize(type)) return 1;
+    if (types[type]) type = types[type];
+    if (typeSize[type]) return 1;
     switch (type) {
         case "CHAR":
         case "BIN": 
@@ -93,6 +96,7 @@ function getCount(type, value) {
         case "STRING": 
         case "STRING_ARRAY":
             count = 1;
+            break;
         case "I18NSTRING":
         case "ASN1":
         case "OPENPGP":
@@ -103,11 +107,11 @@ function getCount(type, value) {
     return count;
 }
 
-
 module.exports.fields = fields;
 module.exports.fieldSize = fieldSize;
 module.exports.fieldOffs = fieldOffs;
 module.exports.fieldEnds = fieldEnds;
 module.exports.getBufferSize = getBufferSize;
 module.exports.getCount = getCount;
+module.exports.types = types;
 
