@@ -94,8 +94,10 @@ function getCount(type, value) {
             count = value.length;
             break;
         case "STRING": 
-        case "STRING_ARRAY":
             count = 1;
+            break;
+        case "STRING_ARRAY":
+            count = 2;
             break;
         case "I18NSTRING":
         case "ASN1":

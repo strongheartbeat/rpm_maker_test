@@ -80,8 +80,9 @@ Rpm.prototype = {
         var basenames = this.contents.map(function (c) {
             return c.basename;
         });
-        header.createEntry("DIRNAMES", dirNames);
+        header.createEntry("DIRINDEXES", 5);
         header.createEntry("BASENAMES", basenames);
+        header.createEntry("DIRNAMES", dirNames);
 
         // header.createEntry("PROVIDENAME", ["wow"]);
         // header.createEntry("PROVIDEVERSION", ["0:1.0-1"]);  
@@ -112,10 +113,11 @@ Rpm.prototype = {
         recursive(appDir, function (err, files) {
             var entryFiles = files.map(function(file) {
                 obj = {};
-                obj.dirname = path.relative(__dirname, path.dirname(file));
+                obj.dirname = '/' + path.relative(__dirname, path.dirname(file)) + '/';
                 obj.basename = path.basename(file);
                 return obj;
             });
+            entryFiles.splice(0, 1, {dirname: '/', basename: 'wowapp'}); //Test
             self.contents = entryFiles;
             self._makeArchieve();
         });

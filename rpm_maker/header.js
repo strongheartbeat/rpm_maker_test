@@ -111,12 +111,12 @@ function Header() {
 }
 
 Header.prototype = {
-    createEntry : function(tag, value) {
+    createEntry : function(tag, value, count) {
         var e = {}; //tag, type, count, offset
         e.tag = tags[tag].code;
         e.type = parseInt(entry.types[tags[tag].type], 10);
         e.value = value;
-        e.count = entry.getCount(e.type, value);
+        e.count = count || entry.getCount(e.type, value);
         e.bufSize = entry.getBufferSize(e.type, value);
         this.entries.push(e);
     },
