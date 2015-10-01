@@ -97,6 +97,10 @@ Rpm.prototype = {
         arStream.append(Buffer.concat(sigBufs));
         arStream.append(Buffer.concat(headerBufs));
 
+        //Archive
+        var tarStream = fstream.Reader({path: this.tarFile, type: 'File'});
+        arStream.append(tarStream);
+
         // rpm
         var output = fstream.Writer(path.join(__dirname, rpmName));
         arStream.pipe(output);
@@ -123,9 +127,17 @@ Rpm.prototype = {
         var tarFile = path.join(__dirname, 'app.tar.gz');
         self.tarFile = tarFile;
 
+        // fstream
+        //     .Reader( {path: appDir, type: 'Directory'})
+        //     .pipe(tar.Pack({}))
+        //     .pipe(zlib.createGzip())
+        //     .pipe(fstream.Writer(tarFile))
+        //     .on('close', _end)
+        //     .on('error', _error)
+
+        var cpioFile = path.join(__dirname, 'app.cpio');
         fstream
-            .Reader( {path: appDir, type: 'Directory'})
-            .pipe(tar.Pack({}))
+            .Reader({path: cpioFile, type: 'File'})
             .pipe(zlib.createGzip())
             .pipe(fstream.Writer(tarFile))
             .on('close', _end)
