@@ -128,8 +128,9 @@ Header.prototype = {
             e.offset = storeBufSize;
             storeBufSize += e.bufSize;
         });
-        var paddingSize = storeBufSize % 16;
+        var paddingSize = (storeBufSize % 8 === 0)? 0: (8-(storeBufSize % 8));
         this.storeBuf = new Buffer(storeBufSize + paddingSize);
+        this.storeBuf.fill('\x00');
 
         //*************** entries (16 bytes * N)
         var entryUnitSize = 0;
@@ -137,7 +138,7 @@ Header.prototype = {
             entryUnitSize += entry.fieldSize[f]
         }
         var entriesSize = entryUnitSize * this.entries.length;
-        paddingSize = entriesSize % 16;
+        paddingSize = (entriesSize % 8 === 0)? 0: (8-(entriesSize % 8));
         this.entriesBuf = new Buffer(entriesSize + paddingSize);
 
         // ==> Fill entry buffer
@@ -158,7 +159,7 @@ Header.prototype = {
         for ( f in headEntry.fieldSize ) {
             headSize += headEntry.fieldSize[f]
         }
-        paddingSize = headSize % 16;
+        paddingSize = (headSize % 8 === 0)? 0: (8-(headSize % 8));
         this.headBuf = new Buffer(headSize + paddingSize);
 
         // ==> Fill head buffer
@@ -174,9 +175,9 @@ Header.prototype = {
         var fieldOff = (baseOff + prot.fieldOffs[prot.fields[fName]]);
         var writeFunc = 'write';
         var writeIntFuncs = {
-            1: 'writeInt8',
-            2: 'writeInt16BE',
-            4: 'writeInt32BE'
+            1: 'writeUInt8',
+            2: 'writeUInt16BE',
+            4: 'writeUInt32BE'
         };
         if (typeof value !== 'string') {
             if (writeIntFuncs[fieldSize]) writeFunc = writeIntFuncs[fieldSize];
@@ -191,9 +192,9 @@ Header.prototype = {
     _writeToStoreBuf : function(buf, value, fieldSize, fieldOff) {
         var writeFunc = 'write';
         var writeIntFuncs = {
-            1: 'writeInt8',
-            2: 'writeInt16BE',
-            4: 'writeInt32BE'
+            1: 'writeUInt8',
+            2: 'writeUInt16BE',
+            4: 'writeUInt32BE'
         };
         if (typeof value !== 'string') {
             if (writeIntFuncs[fieldSize]) writeFunc = writeIntFuncs[fieldSize];

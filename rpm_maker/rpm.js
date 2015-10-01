@@ -35,27 +35,31 @@ Rpm.prototype = {
         this._writeToBuf(lead, buf, 'signature_type', 5);
         this._writeToBuf(lead, buf, 'reserved', ' ');
 
-        console.log("[ByJunil] ", buf);
+        // console.log("[ByJunil] ", buf);
 
         // Signature
         signature.createEntry("LEGACY_SIGSIZE", 12345);
+        signature.createEntry("PAYLOADSIZE", 0);
         signature.createBuffer();
         var sigBufs = [].concat(signature.headBuf).concat(signature.entriesBuf).concat(signature.storeBuf);
-        console.log("[ByJunil-sig] ", Buffer.concat(sigBufs));
+        // console.log("[ByJunil-sig] ", Buffer.concat(sigBufs));
 
         // header
         header.createEntry("NAME", rpmName);
+        header.createEntry("BUILDTIME", Math.floor(new Date().getTime()/1000));
         header.createEntry("VERSION", "3.0");
         header.createEntry("RELEASE", "1");
         header.createEntry("BUILDHOST", "localhost");
+        header.createEntry("SIZE", 0);
         header.createEntry("ARCH", "NOARCH");
         header.createEntry("OS", "LINUX");
         header.createEntry("PLATFORM", "LINUX");
         header.createEntry("OS", "NOARCH-LINUX");
-        // header.createEntry("RHNPLATFORM", "NOARCH");
+        header.createEntry("RHNPLATFORM", "NOARCH");
+        header.createEntry("LICENSE", "MIT");
         header.createBuffer();
         var headerBufs = [].concat(header.headBuf).concat(header.entriesBuf).concat(header.storeBuf);
-        console.log("[ByJunil-header] ", Buffer.concat(headerBufs));
+        // console.log("[ByJunil-header] ", Buffer.concat(headerBufs));
 
         var arStream = CombinedStream.create();
         arStream.append(buf);
