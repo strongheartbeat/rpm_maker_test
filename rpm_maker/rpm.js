@@ -5,7 +5,9 @@ var lead = require('./lead')
     , entry = require('./entry')
     , util = require('util')
     , path = require('path')
+    , fs = require('fs')
     , fstream = require('fstream')
+    , recursive = require('recursive-readdir')
     , tar = require('tar')
     , zlib = require('zlib')
     , cpio = require('cpio-stream')
@@ -13,10 +15,16 @@ var lead = require('./lead')
     , EventEmitter = require('events').EventEmitter;
 
 function Rpm() {
+    EventEmitter.call(this);
 }
 
+util.inherits(Rpm, EventEmitter);
+
 Rpm.prototype = {
-    _dummyData: function() {
+    _makeRpm: function() {
+        var stat = fs.lstatSync(this.tarFile);
+        console.log("this.contents:", this.contents);
+
         // Lead
         var leadSize = 0;
         for ( f in lead.fieldSize ) {
@@ -38,8 +46,10 @@ Rpm.prototype = {
         // console.log("[ByJunil] ", buf);
 
         // Signature
-        signature.createEntry("LEGACY_SIGSIZE", 12345);
-        signature.createEntry("PAYLOADSIZE", 0);
+        signature.createEntry("LEGACY_SIGSIZE", stat.size);
+        signature.createEntry("PAYLOADSIZE", stat.size);
+        // signature.createEntry("LEGACY_SIGSIZE", 12345);
+        // signature.createEntry("PAYLOADSIZE", 0);
         signature.createBuffer();
         var sigBufs = [].concat(signature.headBuf).concat(signature.entriesBuf).concat(signature.storeBuf);
         // console.log("[ByJunil-sig] ", Buffer.concat(sigBufs));
@@ -48,6 +58,7 @@ Rpm.prototype = {
         header.createEntry("BUILDTIME", Math.floor(new Date().getTime()/1000));
         header.createEntry("RPMVERSION", "4.4.2");
         header.createEntry("PAYLOADFORMAT", "cpio");
+        // header.createEntry("PAYLOADFORMAT", "tar");
         header.createEntry("PAYLOADCOMPRESSOR", "gzip");
         header.createEntry("NAME", "wow");
         header.createEntry("VERSION", "1.0");
@@ -61,7 +72,16 @@ Rpm.prototype = {
         header.createEntry("PLATFORM", "noarch-linux");
         header.createEntry("RHNPLATFORM", "noarch");
         header.createEntry("LICENSE", "MIT");
-        header.createEntry("PAYLOADFLAGS", "9");   
+        header.createEntry("PAYLOADFLAGS", "9");
+
+        var dirNames = this.contents.map(function (c) {
+            return c.dirname;
+        });
+        var basenames = this.contents.map(function (c) {
+            return c.basename;
+        });
+        header.createEntry("DIRNAMES", dirNames);
+        header.createEntry("BASENAMES", basenames);
 
         // header.createEntry("PROVIDENAME", ["wow"]);
         // header.createEntry("PROVIDEVERSION", ["0:1.0-1"]);  
@@ -77,8 +97,49 @@ Rpm.prototype = {
         arStream.append(Buffer.concat(sigBufs));
         arStream.append(Buffer.concat(headerBufs));
 
+        // rpm
         var output = fstream.Writer(path.join(__dirname, rpmName));
         arStream.pipe(output);
+    },
+
+    _readAppDir : function() {
+        var self = this;
+        var appDir = path.join(__dirname, 'wowapp');
+        recursive(appDir, function (err, files) {
+            var entryFiles = files.map(function(file) {
+                obj = {};
+                obj.dirname = path.relative(__dirname, path.dirname(file));
+                obj.basename = path.basename(file);
+                return obj;
+            });
+            self.contents = entryFiles;
+            self._makeArchieve();
+        });
+    },
+
+    _makeArchieve : function() {
+        var self = this;
+        var appDir = path.join(__dirname, 'wowapp');
+        var tarFile = path.join(__dirname, 'app.tar.gz');
+        self.tarFile = tarFile;
+
+        fstream
+            .Reader( {path: appDir, type: 'Directory'})
+            .pipe(tar.Pack({}))
+            .pipe(zlib.createGzip())
+            .pipe(fstream.Writer(tarFile))
+            .on('close', _end)
+            .on('error', _error)
+
+        function _end() {
+            console.log(path.basename(tarFile) + " has been made...");
+            this.on('lead', self._makeRpm.bind(self));
+            this.emit('lead');
+        }
+
+        function _error() {
+            console.log("error:", e);
+        }
     },
 
     _writeToBuf : function(prot, buf, fName, value, baseOff) {
@@ -105,4 +166,7 @@ Rpm.prototype = {
 
 module.exports = Rpm;
 
-new Rpm()._dummyData();
+var rpm = new Rpm();
+// rpm._makeRpm();
+rpm._readAppDir();
+// rpm._makeArchieve();
