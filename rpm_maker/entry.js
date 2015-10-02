@@ -67,7 +67,6 @@ function getSize(type, value) {
 function getBufferSize(type, value, count) {
     var size = 0;
     switch (type) {
-        case "I18NSTRING":
         case "ASN1":
         case "OPENPGP":
             throw "Not supported (TBD) type: " + type + ", value: " + value;
@@ -76,6 +75,7 @@ function getBufferSize(type, value, count) {
         case "CHAR":
             size = value.length + 1;    //Adding escape(\0) size
             break;
+        case "I18NSTRING":
         case "STRING_ARRAY":
             if (! value instanceof Array) throw type + " value should be array type. (value: " + value + ").";
             for(v in value) {
@@ -94,11 +94,11 @@ function getCount(type, value) {
     var count = 0;
     if (type === "STRING") return 1; //Special case, STRING TYPE count is always 1.
     switch (type) {
-        case "I18NSTRING":
         case "ASN1":
         case "OPENPGP":
             throw "Not supported (TBD) type: " + type + ", value: " + value;
         case "STRING_ARRAY":
+        case "I18NSTRING":
             if (! value instanceof Array) throw type + " value should be array type. (value: " + value + ").";
             count = value.length;
             break;

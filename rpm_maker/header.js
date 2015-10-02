@@ -130,7 +130,8 @@ Header.prototype = {
             e.offset = storeBufSize;
             storeBufSize += e.bufSize;
         });
-        var paddingSize = (storeBufSize % 8 === 0)? 0: (8-(storeBufSize % 8));
+        var paddingSize = (storeBufSize % 4 === 0)? 0: (4-(storeBufSize % 4));
+                //console.log("storeBufSize:", storeBufSize, ", padding:", paddingSize)
         this.storeBuf = new Buffer(storeBufSize + paddingSize);
         this.storeBuf.fill('\x00');
 
@@ -140,8 +141,7 @@ Header.prototype = {
             entryUnitSize += entry.fieldSize[f]
         }
         var entriesSize = entryUnitSize * this.entries.length;
-        paddingSize = (entriesSize % 8 === 0)? 0: (8-(entriesSize % 8));
-        this.entriesBuf = new Buffer(entriesSize + paddingSize);
+        this.entriesBuf = new Buffer(entriesSize);
         this.entriesBuf.fill('\x00');
 
         // ==> Fill entry buffer
@@ -162,8 +162,7 @@ Header.prototype = {
         for ( f in headEntry.fieldSize ) {
             headSize += headEntry.fieldSize[f]
         }
-        paddingSize = (headSize % 8 === 0)? 0: (8-(headSize % 8));
-        this.headBuf = new Buffer(headSize + paddingSize);
+        this.headBuf = new Buffer(headSize);
         this.headBuf.fill('\x00');
 
         // ==> Fill head buffer
@@ -193,7 +192,8 @@ Header.prototype = {
             if ('string' !== typeof value[0]) {
                 writeFunc = 'writeUIntBE';
                 for (v in value) {
-                    buf[writeFunc](value, fieldOff, typeSize);
+                    // console.log("WRITE!!", value[v], " typeSize:", typeSize, ", fieldOff: ", fieldOff, ",fieldSize:", fieldSize);
+                    buf[writeFunc](value[v], fieldOff, typeSize);
                     fieldOff += typeSize;
                 }
                 return;

@@ -52,7 +52,7 @@ Signature.prototype = {
             e.offset = storeBufSize;
             storeBufSize += e.bufSize;
         });
-        var paddingSize = (storeBufSize % 8 === 0)? 0: (8-(storeBufSize % 8));
+        var paddingSize = (storeBufSize % 4 === 0)? 0: (4-(storeBufSize % 4));
         this.storeBuf = new Buffer(storeBufSize + paddingSize);
         this.storeBuf.fill('\x00');
 
@@ -62,8 +62,7 @@ Signature.prototype = {
             entryUnitSize += entry.fieldSize[f]
         }
         var entriesSize = entryUnitSize * this.entries.length;
-        paddingSize = (entriesSize % 8 === 0)? 0: (8-(entriesSize % 8));
-        this.entriesBuf = new Buffer(entriesSize + paddingSize);
+        this.entriesBuf = new Buffer(entriesSize);
 
         // ==> Fill entry buffer
         var baseOffset = 0, count = 0;
@@ -83,8 +82,7 @@ Signature.prototype = {
         for ( f in headEntry.fieldSize ) {
             headSize += headEntry.fieldSize[f]
         }
-        paddingSize = (headSize % 8 === 0)? 0: (8-(headSize % 8));
-        this.headBuf = new Buffer(headSize + paddingSize);
+        this.headBuf = new Buffer(headSize);
 
         // ==> Fill head buffer
         this._writeToBuf(headEntry, this.headBuf, 'magic', 0x8EADE801);
@@ -113,7 +111,7 @@ Signature.prototype = {
             if ('string' !== typeof value[0]) {
                 writeFunc = 'writeUIntBE';
                 for (v in value) {
-                    buf[writeFunc](value, fieldOff, typeSize);
+                    buf[writeFunc](value[v], fieldOff, typeSize);
                     fieldOff += typeSize;
                 }
                 return;

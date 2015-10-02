@@ -60,19 +60,22 @@ Rpm.prototype = {
         header.createEntry("PAYLOADFORMAT", "cpio");
         // header.createEntry("PAYLOADFORMAT", "tar");
         header.createEntry("PAYLOADCOMPRESSOR", "gzip");
-        header.createEntry("NAME", "wow");
+        header.createEntry("NAME", "wow211");
         header.createEntry("VERSION", "1.0");
         header.createEntry("RELEASE", "1");
         // header.createEntry("EPOCH", 0);
+        header.createEntry("SUMMARY", ["This is test summary"]);
+        header.createEntry("DESCRIPTION", ["This is test description"]);
 
         header.createEntry("BUILDHOST", "localhost");
-        header.createEntry("SIZE", 0);
+        // header.createEntry("SIZE", stat.size);
         header.createEntry("ARCH", "noarch");
         header.createEntry("OS", "linux");
         header.createEntry("PLATFORM", "noarch-linux");
         header.createEntry("RHNPLATFORM", "noarch");
         header.createEntry("LICENSE", "MIT");
         header.createEntry("PAYLOADFLAGS", "9");
+        header.createEntry("SIZE", stat.size);
 
         var dirNames = this.contents.map(function (c) {
             return c.dirname;
@@ -83,11 +86,26 @@ Rpm.prototype = {
         var idxDirs = Object.keys(basenames).map(function(i){
             return parseInt(i);
         });
+        var fileSizes = this.contents.map(function (c) {
+            // console.log("c.stat:", c.stat);
+            return c.stat.size;
+        });
+        var fileINodes = this.contents.map(function (c) {
+            return c.stat.ino;
+        });
+        var instPaths = this.contents.map(function (c) {
+            return c.instPath;
+        });
         // console.log(idxDirs);
-        // header.createEntry("DIRINDEXES", 0);
-        header.createEntry("DIRINDEXES", idxDirs);
+        header.createEntry("DIRINDEXES", [0,0,0,0]);
+        // header.createEntry("DIRINDEXES", idxDirs);
         header.createEntry("BASENAMES", basenames);
-        header.createEntry("DIRNAMES", dirNames);
+        // header.createEntry("DIRNAMES", dirNames);
+        header.createEntry("DIRNAMES", ['/wowapp/']);
+        // header.createEntry("OLDFILENAMES", instPaths);
+
+        // header.createEntry("FILESIZES", fileSizes);
+        // header.createEntry("FILEINODES", fileINodes);
 
         // header.createEntry("PROVIDENAME", ["wow"]);
         // header.createEntry("PROVIDEVERSION", ["0:1.0-1"]);  
@@ -120,6 +138,7 @@ Rpm.prototype = {
                 obj = {};
                 obj.dirname = '/' + path.relative(__dirname, path.dirname(file)).replace(/\\/g,'/') + '/';
                 obj.basename = path.basename(file);
+                obj.instPath = obj.dirname + obj.basename;
                 obj.origPath = file;
                 obj.stat = fs.lstatSync(file);
                 return obj;
