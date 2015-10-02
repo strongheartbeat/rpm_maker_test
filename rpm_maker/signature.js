@@ -5,6 +5,7 @@
 
 var headEntry = require('./head_entry')
     , entry = require('./entry')
+    , merge = require('merge')
 
 var tags = {
     SIGNATURES: { code: 62, type: "BIN" }
@@ -35,10 +36,12 @@ Signature.prototype = {
     createEntry : function(tag, value) {
         var e = {}; //tag, type, count, offset
         e.tag = tags[tag].code;
+        e.typeStr = tags[tag].type;
         e.type = parseInt(entry.types[tags[tag].type], 10);
         e.value = value;
-        e.count = entry.getCount(e.type, value);
-        e.bufSize = entry.getBufferSize(e.type, value);
+        merge(e, entry.getSize(e.typeStr, value));
+        // e.count = entry.getCount(e.typeStr, value);
+        // e.bufSize = entry.getBufferSize(e.typeStr, value);
         this.entries.push(e);
     },
 
@@ -72,7 +75,7 @@ Signature.prototype = {
             this._writeToBuf(entry, this.entriesBuf, 'count', this.entries[e].count, baseOffset);
 
             //store
-            this._writeToStoreBuf(this.storeBuf, this.entries[e].value, this.entries[e].bufSize, this.entries[e].offset);
+            this._writeToStoreBuf(this.storeBuf, this.entries[e].value, this.entries[e].typeSize, this.entries[e].bufSize, this.entries[e].offset);
         }
 
         //*************** head (16 bytes)
@@ -94,18 +97,9 @@ Signature.prototype = {
         if (!baseOff) baseOff = 0;
         var fieldSize = prot.fieldSize[prot.fields[fName]];
         var fieldOff = (baseOff + prot.fieldOffs[prot.fields[fName]]);
-        var writeFunc = 'write';
-        var writeIntFuncs = {
-            1: 'writeUInt8',
-            2: 'writeUInt16BE',
-            4: 'writeUInt32BE'
-        };
-        if (value instanceof Array) {
-            value = value.join('\0');
-        }
+         var writeFunc = 'write';
         if (typeof value !== 'string') {
-            if (writeIntFuncs[fieldSize]) writeFunc = writeIntFuncs[fieldSize];
-            else console.error("Not found !!", fieldSize);
+            writeFunc = 'writeUIntBE'
         }
         buf[writeFunc](value, fieldOff, fieldSize);
         if (writeFunc === 'write' && value.length < fieldSize) {
@@ -113,22 +107,24 @@ Signature.prototype = {
         }
     },
 
-    _writeToStoreBuf : function(buf, value, fieldSize, fieldOff) {
+    _writeToStoreBuf : function(buf, value, typeSize, fieldSize, fieldOff) {
         var writeFunc = 'write';
-        var writeIntFuncs = {
-            1: 'writeUInt8',
-            2: 'writeUInt16BE',
-            4: 'writeUInt32BE'
-        };
         if (value instanceof Array) {
-            value = value.join('\0');
-        }
-        if (typeof value !== 'string') {
-            if (writeIntFuncs[fieldSize]) writeFunc = writeIntFuncs[fieldSize];
-            else console.error("Not found !!", fieldSize);
+            if ('string' !== typeof value[0]) {
+                writeFunc = 'writeUIntBE';
+                for (v in value) {
+                    buf[writeFunc](value, fieldOff, typeSize);
+                    fieldOff += typeSize;
+                }
+                return;
+            } else {
+                value = value.join('\0');
+            }
+        } else if ('string' !== typeof value) {
+            writeFunc = 'writeUIntBE';
         }
         buf[writeFunc](value, fieldOff, fieldSize);
-        if (writeFunc === 'write' && value.length < fieldSize) {
+        if ( 'write' === writeFunc && value.length < fieldSize) {
             buf['fill']('\x00', fieldOff + value.length);
         }
     }

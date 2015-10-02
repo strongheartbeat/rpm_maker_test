@@ -5,6 +5,7 @@
 
 var headEntry = require('./head_entry')
     , entry = require('./entry')
+    , merge = require('merge')
 
 var tags = {
     NAME: { code: 1000, type: "STRING" }
@@ -104,20 +105,21 @@ var tags = {
     , OBSOLETEVERSION: { code: 1115, type: "STRING_ARRAY" }
 };
 
-
 function Header() {
     this.offset = 0;
     this.entries = [];
 }
 
 Header.prototype = {
-    createEntry : function(tag, value, count) {
+    createEntry : function(tag, value) {
         var e = {}; //tag, type, count, offset
         e.tag = tags[tag].code;
+        e.typeStr = tags[tag].type;
         e.type = parseInt(entry.types[tags[tag].type], 10);
         e.value = value;
-        e.count = count || entry.getCount(e.type, value);
-        e.bufSize = entry.getBufferSize(e.type, value);
+        merge(e, entry.getSize(e.typeStr, value));
+        // e.count = entry.getCount(e.typeStr, value);
+        // e.bufSize = entry.getBufferSize(e.typeStr, value);
         this.entries.push(e);
     },
 
@@ -140,6 +142,7 @@ Header.prototype = {
         var entriesSize = entryUnitSize * this.entries.length;
         paddingSize = (entriesSize % 8 === 0)? 0: (8-(entriesSize % 8));
         this.entriesBuf = new Buffer(entriesSize + paddingSize);
+        this.entriesBuf.fill('\x00');
 
         // ==> Fill entry buffer
         var baseOffset = 0, count = 0;
@@ -151,7 +154,7 @@ Header.prototype = {
             this._writeToBuf(entry, this.entriesBuf, 'count', this.entries[e].count, baseOffset);
 
             //store
-            this._writeToStoreBuf(this.storeBuf, this.entries[e].value, this.entries[e].bufSize, this.entries[e].offset);
+            this._writeToStoreBuf(this.storeBuf, this.entries[e].value, this.entries[e].typeSize, this.entries[e].bufSize, this.entries[e].offset);
         }
 
         //*************** head (16 bytes)
@@ -161,6 +164,7 @@ Header.prototype = {
         }
         paddingSize = (headSize % 8 === 0)? 0: (8-(headSize % 8));
         this.headBuf = new Buffer(headSize + paddingSize);
+        this.headBuf.fill('\x00');
 
         // ==> Fill head buffer
         this._writeToBuf(headEntry, this.headBuf, 'magic', 0x8EADE801);
@@ -173,18 +177,9 @@ Header.prototype = {
         if (!baseOff) baseOff = 0;
         var fieldSize = prot.fieldSize[prot.fields[fName]];
         var fieldOff = (baseOff + prot.fieldOffs[prot.fields[fName]]);
-        var writeFunc = 'write';
-        var writeIntFuncs = {
-            1: 'writeUInt8',
-            2: 'writeUInt16BE',
-            4: 'writeUInt32BE'
-        };
-        if (value instanceof Array) {
-            value = value.join('\0');
-        }
+         var writeFunc = 'write';
         if (typeof value !== 'string') {
-            if (writeIntFuncs[fieldSize]) writeFunc = writeIntFuncs[fieldSize];
-            else console.error("Not found !!", fieldSize);
+            writeFunc = 'writeUIntBE'
         }
         buf[writeFunc](value, fieldOff, fieldSize);
         if (writeFunc === 'write' && value.length < fieldSize) {
@@ -192,22 +187,24 @@ Header.prototype = {
         }
     },
 
-    _writeToStoreBuf : function(buf, value, fieldSize, fieldOff) {
+    _writeToStoreBuf : function(buf, value, typeSize, fieldSize, fieldOff) {
         var writeFunc = 'write';
-        var writeIntFuncs = {
-            1: 'writeUInt8',
-            2: 'writeUInt16BE',
-            4: 'writeUInt32BE'
-        };
         if (value instanceof Array) {
-            value = value.join('\0');
-        }
-        if (typeof value !== 'string') {
-            if (writeIntFuncs[fieldSize]) writeFunc = writeIntFuncs[fieldSize];
-            else console.error("Not found !!", fieldSize);
+            if ('string' !== typeof value[0]) {
+                writeFunc = 'writeUIntBE';
+                for (v in value) {
+                    buf[writeFunc](value, fieldOff, typeSize);
+                    fieldOff += typeSize;
+                }
+                return;
+            } else {
+                value = value.join('\0');
+            }
+        } else if ('string' !== typeof value) {
+            writeFunc = 'writeUIntBE';
         }
         buf[writeFunc](value, fieldOff, fieldSize);
-        if (writeFunc === 'write' && value.length < fieldSize) {
+        if ( 'write' === writeFunc && value.length < fieldSize) {
             buf['fill']('\x00', fieldOff + value.length);
         }
     }

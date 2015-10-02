@@ -23,7 +23,7 @@ util.inherits(Rpm, EventEmitter);
 Rpm.prototype = {
     _makeRpm: function() {
         var stat = fs.lstatSync(this.tarFile);
-        console.log("this.contents:", this.contents);
+        // console.log("this.contents:", this.contents);
 
         // Lead
         var leadSize = 0;
@@ -80,7 +80,12 @@ Rpm.prototype = {
         var basenames = this.contents.map(function (c) {
             return c.basename;
         });
-        header.createEntry("DIRINDEXES", 5);
+        var idxDirs = Object.keys(basenames).map(function(i){
+            return parseInt(i);
+        });
+        // console.log(idxDirs);
+        // header.createEntry("DIRINDEXES", 0);
+        header.createEntry("DIRINDEXES", idxDirs);
         header.createEntry("BASENAMES", basenames);
         header.createEntry("DIRNAMES", dirNames);
 
@@ -113,11 +118,13 @@ Rpm.prototype = {
         recursive(appDir, function (err, files) {
             var entryFiles = files.map(function(file) {
                 obj = {};
-                obj.dirname = '/' + path.relative(__dirname, path.dirname(file)) + '/';
+                obj.dirname = '/' + path.relative(__dirname, path.dirname(file)).replace(/\\/g,'/') + '/';
                 obj.basename = path.basename(file);
+                obj.origPath = file;
+                obj.stat = fs.lstatSync(file);
                 return obj;
             });
-            entryFiles.splice(0, 1, {dirname: '/', basename: 'wowapp'}); //Test
+            // entryFiles.splice(0, 1, {dirname: '/', basename: 'wowapp'}); //Test
             self.contents = entryFiles;
             self._makeArchieve();
         });
