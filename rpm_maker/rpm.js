@@ -93,6 +93,9 @@ Rpm.prototype = {
         var fileINodes = this.contents.map(function (c) {
             return c.stat.ino;
         });
+        var fileModes = this.contents.map(function (c) {
+            return c.stat.mode;
+        });
         var instPaths = this.contents.map(function (c) {
             return c.instPath;
         });
@@ -101,11 +104,13 @@ Rpm.prototype = {
         // header.createEntry("DIRINDEXES", idxDirs);
         header.createEntry("BASENAMES", basenames);
         // header.createEntry("DIRNAMES", dirNames);
-        header.createEntry("DIRNAMES", ['/wowapp/']);
+        // header.createEntry("DIRNAMES", ['./wowapp/']);
+        header.createEntry("DIRNAMES", ["/ivi/app/com.yourdomain.app/"]);
         // header.createEntry("OLDFILENAMES", instPaths);
 
         // header.createEntry("FILESIZES", fileSizes);
         // header.createEntry("FILEINODES", fileINodes);
+        // header.createEntry("FILEMODES", fileModes);
 
         // header.createEntry("PROVIDENAME", ["wow"]);
         // header.createEntry("PROVIDEVERSION", ["0:1.0-1"]);  
@@ -136,14 +141,15 @@ Rpm.prototype = {
         recursive(appDir, function (err, files) {
             var entryFiles = files.map(function(file) {
                 obj = {};
-                obj.dirname = '/' + path.relative(__dirname, path.dirname(file)).replace(/\\/g,'/') + '/';
+                // obj.dirname = './' + path.relative(__dirname, path.dirname(file)).replace(/\\/g,'/') + '/';
+                obj.dirname = '/ivi/app/com.yourdomain.app/'; // test
                 obj.basename = path.basename(file);
                 obj.instPath = obj.dirname + obj.basename;
                 obj.origPath = file;
                 obj.stat = fs.lstatSync(file);
                 return obj;
             });
-            // entryFiles.splice(0, 1, {dirname: '/', basename: 'wowapp'}); //Test
+            // entryFiles.splice(0, 1, {dirname: './', basename: 'wowapp', stat: {size: 204}}); //Test
             self.contents = entryFiles;
             self._makeArchieve();
         });
@@ -163,7 +169,8 @@ Rpm.prototype = {
         //     .on('close', _end)
         //     .on('error', _error)
 
-        var cpioFile = path.join(__dirname, 'app.cpio');
+        // var cpioFile = path.join(__dirname, 'app.cpio');
+        var cpioFile = path.join(__dirname, 'com.yourdomain.app.cpio');
         fstream
             .Reader({path: cpioFile, type: 'File'})
             .pipe(zlib.createGzip())
