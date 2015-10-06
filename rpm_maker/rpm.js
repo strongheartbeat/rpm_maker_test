@@ -19,6 +19,11 @@ function Rpm() {
 }
 
 util.inherits(Rpm, EventEmitter);
+// var pack = cpio.pack();
+var PackNewc = require('cpio-stream/pack-newc').PackNewc;
+// var PackNewc = require('cpio-stream/pack').Pack;
+var newc = require('cpio-stream/headers').newc;
+var pack = new PackNewc({cpioCodec:newc});
 
 Rpm.prototype = {
     _makeRpm: function() {
@@ -100,11 +105,13 @@ Rpm.prototype = {
             return c.instPath;
         });
         // console.log(idxDirs);
+        // header.createEntry("DIRINDEXES", [0,1,1,1,1]);
         header.createEntry("DIRINDEXES", [0,0,0,0]);
         // header.createEntry("DIRINDEXES", idxDirs);
         header.createEntry("BASENAMES", basenames);
+        // header.createEntry("BASENAMES", ['wowapp'].concat(basenames));
         // header.createEntry("DIRNAMES", dirNames);
-        // header.createEntry("DIRNAMES", ['./wowapp/']);
+        // header.createEntry("DIRNAMES", ['/','/wowapp/']);
         header.createEntry("DIRNAMES", ["/ivi/app/com.yourdomain.app/"]);
         // header.createEntry("OLDFILENAMES", instPaths);
 
@@ -142,7 +149,7 @@ Rpm.prototype = {
             var entryFiles = files.map(function(file) {
                 obj = {};
                 // obj.dirname = './' + path.relative(__dirname, path.dirname(file)).replace(/\\/g,'/') + '/';
-                obj.dirname = '/ivi/app/com.yourdomain.app/'; // test
+                obj.dirname = './ivi/app/com.yourdomain.app/'; // test
                 obj.basename = path.basename(file);
                 obj.instPath = obj.dirname + obj.basename;
                 obj.origPath = file;
@@ -151,8 +158,21 @@ Rpm.prototype = {
             });
             // entryFiles.splice(0, 1, {dirname: './', basename: 'wowapp', stat: {size: 204}}); //Test
             self.contents = entryFiles;
-            self._makeArchieve();
+            // self._makeArchieve();
+            self._makeCpio();
         });
+    },
+
+    _makeCpio : function() {
+        this.contents.forEach(function(c) {
+            var data = fs.readFileSync(c.origPath);
+            c.stat.nameSize = c.instPath.length + 1;
+             // c.stat.nameSize = c.instPath.length;
+            c.stat.name = c.instPath;
+            pack.entry(c.stat, data);
+        });
+        pack.finalize();
+        this._makeArchieve();
     },
 
     _makeArchieve : function() {
@@ -170,9 +190,15 @@ Rpm.prototype = {
         //     .on('error', _error)
 
         // var cpioFile = path.join(__dirname, 'app.cpio');
-        var cpioFile = path.join(__dirname, 'com.yourdomain.app.cpio');
-        fstream
-            .Reader({path: cpioFile, type: 'File'})
+        // var cpioFile = path.join(__dirname, 'com.yourdomain.app.cpio');
+        // fstream
+        //     .Reader({path: cpioFile, type: 'File'})
+        //     .pipe(zlib.createGzip())
+        //     .pipe(fstream.Writer(tarFile))
+        //     .on('close', _end)
+        //     .on('error', _error)
+
+        pack
             .pipe(zlib.createGzip())
             .pipe(fstream.Writer(tarFile))
             .on('close', _end)
