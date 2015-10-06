@@ -166,9 +166,14 @@ Rpm.prototype = {
     _makeCpio : function() {
         this.contents.forEach(function(c) {
             var data = fs.readFileSync(c.origPath);
-            c.stat.nameSize = c.instPath.length + 1;
-             // c.stat.nameSize = c.instPath.length;
+            // c.stat.nameSize = c.instPath.length + 1;
+            if (c.instPath.length % 2 !== 0) {
+                console.log("Who are you ? ", c.instPath, ", size: ", c.instPath.length);
+            }
+            // c.stat.nameSize = (c.instPath.length % 2 !== 0)? c.instPath.length + 1 : c.instPath.length;
+            c.stat.nameSize = c.instPath.length;
             c.stat.name = c.instPath;
+            console.log("[!] c.stat.name.length", c.stat.name.length);
             pack.entry(c.stat, data);
         });
         pack.finalize();
