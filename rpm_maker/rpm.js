@@ -115,9 +115,9 @@ Rpm.prototype = {
         header.createEntry("DIRNAMES", ["/ivi/app/com.yourdomain.app/"]);
         // header.createEntry("OLDFILENAMES", instPaths);
 
-        // header.createEntry("FILESIZES", fileSizes);
-        // header.createEntry("FILEINODES", fileINodes);
-        // header.createEntry("FILEMODES", fileModes);
+        header.createEntry("FILESIZES", fileSizes);
+        header.createEntry("FILEINODES", fileINodes);
+        header.createEntry("FILEMODES", fileModes);
 
         // header.createEntry("PROVIDENAME", ["wow"]);
         // header.createEntry("PROVIDEVERSION", ["0:1.0-1"]);  
@@ -140,6 +140,7 @@ Rpm.prototype = {
         // rpm
         var output = fstream.Writer(path.join(__dirname, rpmName));
         arStream.pipe(output);
+        console.log("END..!!", rpmName);
     },
 
     _readAppDir : function() {
