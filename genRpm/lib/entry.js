@@ -73,14 +73,12 @@ function getBufferSize(type, value, count) {
         case "STRING":
         case "BIN":
         case "CHAR":
-            size = value.length + 1;    //Adding escape(\0) size
+            size = value.length ;    //Adding escape(\0) size
             break;
         case "I18NSTRING":
         case "STRING_ARRAY":
             if (! value instanceof Array) throw type + " value should be array type. (value: " + value + ").";
-            for(v in value) {
-                size += (value[v].length + 1);
-            }
+            size = value.join('\0').length;
             break;
         default:
             count = count || getCount(type, value);

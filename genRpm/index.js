@@ -7,9 +7,11 @@ var
     , fs = require('fs')
     , fstream = require('fstream')
     , async = require('async')
+    , zlib = require('zlib')
     , CombinedStream = require('combined-stream')
     , lead = require('./lib/lead')
     , signature = require('./lib/signature')
+    , header = require('./lib/header')
 
 
 // Logic
@@ -49,6 +51,7 @@ Rpm.prototype = {
             this.genCpio.bind(this),
             this.genLead.bind(this),
             this.genSignature.bind(this),
+            this.genHeader.bind(this),
             this.genRpm.bind(this)
         ], function(err, results) {
             console.log("async end...");
@@ -63,7 +66,32 @@ Rpm.prototype = {
     },
 
     genHeader: function(next) {
+        var stat = fs.lstatSync(this.cpioFile);
+        // header
+        header.createEntry("BUILDTIME", Math.floor(new Date().getTime()/1000));
+        header.createEntry("RPMVERSION", "4.4.2");
+        header.createEntry("PAYLOADFORMAT", "cpio");
+        // header.createEntry("PAYLOADFORMAT", "tar");
+        header.createEntry("PAYLOADCOMPRESSOR", "gzip");
+        header.createEntry("NAME", "wow21121321");
+        header.createEntry("VERSION", "1.0");
+        header.createEntry("RELEASE", "1");
+        // header.createEntry("EPOCH", 0);
+        header.createEntry("SUMMARY", ["This is test summary"]);
+        header.createEntry("DESCRIPTION", ["This is test description"]);
 
+        header.createEntry("BUILDHOST", "localhost");
+        // header.createEntry("SIZE", stat.size);
+        header.createEntry("ARCH", "noarch");
+        header.createEntry("OS", "linux");
+        header.createEntry("PLATFORM", "noarch-linux");
+        header.createEntry("RHNPLATFORM", "noarch");
+        header.createEntry("LICENSE", "MIT");
+        header.createEntry("PAYLOADFLAGS", "9");
+        header.createEntry("SIZE", stat.size);
+
+        this.rpmStream.append(header.getBuffer());
+        next();
     },
 
     genSignature: function(next) {
@@ -71,10 +99,7 @@ Rpm.prototype = {
 
         signature.createEntry("LEGACY_SIGSIZE", stat.size);
         signature.createEntry("PAYLOADSIZE", stat.size);
-        signature.genBuffer();
-        this.rpmStream.append(signature.headBuf);
-        this.rpmStream.append(signature.entriesBuf);
-        this.rpmStream.append(signature.storeBuf);
+        this.rpmStream.append(signature.getBuffer());
         next();
     },
 
