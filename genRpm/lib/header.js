@@ -119,6 +119,7 @@ Header.prototype = {
         e.value = value;
         e.count = entry.getCount(e.typeStr, e.value);
         e.bufSize = entry.getBufferSize(e.typeStr, e.value, e.count);
+                console.log("e.typeStr:", e.typeStr, ",value:", value, ",e.count:", e.count, ",e.bufSize:", e.bufSize);
         e.buf = new Buffer(e.bufSize);
         e.buf.fill('\x00');
         writeToStoreBuf(e.buf, e);
@@ -133,12 +134,15 @@ Header.prototype = {
             , padSize = 0;
         self.entries.map(function(e) {
             // if (["STRING", "STRING_ARRAY", "I18NSTRING"].indexOf(e.typeStr) !== -1) {
-            //     padSize = offset % 4;
-            //     var padding = new Buffer(padSize);
-            //     padding.fill('\x00');
-            //     storeBuffers.push(padding);
-            //     offset += padSize;
-            // }
+            // if ([tags["DIRINDEXES"].code, tags["BASENAMES"].code, tags["DIRNAMES"].code].indexOf(e.tag) !== -1 ) {
+            if (tags["DIRINDEXES"].code === e.tag || tags["FILESIZES"].code === e.tag) {
+                padSize = (4 - (offset % 4)) % 4;
+                var padding = new Buffer(padSize);
+                padding.fill('\x00');
+                storeBuffers.push(padding);
+                console.log("!!!padSizse:", padSize);
+                offset += padSize;
+            }
             e.offset = offset;
             storeBuffers.push(e.buf);
             offset += e.bufSize;
@@ -214,10 +218,10 @@ function writeToStoreBuf(buf, ent) {
     } else {
         var offset = 0;
         fieldSize = entry.typeSize[ent.typeStr] || ent.value[0].length;
-        for (v in ent.value) {
-            buf[writeFunc](value, offset, fieldSize);
+        value.forEach(function(v) {
+            buf[writeFunc](v, offset, fieldSize);
             offset += fieldSize;
-        }
+        });
     }
 }
 

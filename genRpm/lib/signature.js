@@ -135,10 +135,10 @@ function writeToStoreBuf(buf, ent) {
     } else {
         var offset = 0;
         fieldSize = entry.typeSize[ent.typeStr] || ent.value[0].length;
-        for (v in ent.value) {
-            buf[writeFunc](value, offset, fieldSize);
+        value.forEach(function(v) {
+            buf[writeFunc](v, offset, fieldSize);
             offset += fieldSize;
-        }
+        });
     }
 }
 

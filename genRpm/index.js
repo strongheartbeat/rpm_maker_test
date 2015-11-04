@@ -1,4 +1,4 @@
-var 
+var
     util = require('util')
     , Readable = require('stream').Readable
     , Writable = require('stream').Writable
@@ -16,7 +16,7 @@ var
 
 // Logic
 //   Make cpio
-//   Make rpm 
+//   Make rpm
 //       +- lead
 //       +- signature (HeaderStructureHeader + IndexEntry (*) + Store)
 //       +- header (HeaderStructureHeader + IndexEntry (*) + Store)
@@ -60,8 +60,10 @@ Rpm.prototype = {
 
     genRpm: function(next) {
         var self = this;
+        var inCpio = fstream.Reader({path: this.cpioFile, type: 'File'});
         var output = fstream.Writer(self.rpmFile);
         console.log("Generating rpm file...", self.rpmFile);
+        this.rpmStream.append(inCpio);
         this.rpmStream.pipe(output);
     },
 
@@ -73,7 +75,7 @@ Rpm.prototype = {
         header.createEntry("PAYLOADFORMAT", "cpio");
         // header.createEntry("PAYLOADFORMAT", "tar");
         header.createEntry("PAYLOADCOMPRESSOR", "gzip");
-        header.createEntry("NAME", "wow21121321");
+        header.createEntry("NAME", "wow21123");
         header.createEntry("VERSION", "1.0");
         header.createEntry("RELEASE", "1");
         // header.createEntry("EPOCH", 0);
@@ -89,6 +91,35 @@ Rpm.prototype = {
         header.createEntry("LICENSE", "MIT");
         header.createEntry("PAYLOADFLAGS", "9");
         header.createEntry("SIZE", stat.size);
+
+        var dirNames = this.contents.map(function (c) {
+            return c.dirname;
+        });
+        var basenames = this.contents.map(function (c) {
+            return c.basename;
+        });
+        var idxDirs = Object.keys(basenames).map(function(i){
+            return parseInt(i);
+        });
+        var fileSizes = this.contents.map(function (c) {
+            return c.stat.size;
+        });
+        var fileINodes = this.contents.map(function (c) {
+            return c.stat.ino;
+        });
+        var fileModes = this.contents.map(function (c) {
+            return c.stat.mode;
+        });
+        var instPaths = this.contents.map(function (c) {
+            return c.instPath;
+        });
+        header.createEntry("DIRINDEXES", [0,0,0,0]);
+        header.createEntry("BASENAMES", basenames);
+        header.createEntry("DIRNAMES", ["/ivi/app/good/"]);
+
+        // header.createEntry("FILESIZES", fileSizes);
+        // header.createEntry("FILEINODES", fileINodes);
+        // header.createEntry("FILEMODES", fileModes);
 
         this.rpmStream.append(header.getBuffer());
         next();
@@ -139,6 +170,7 @@ Rpm.prototype = {
                     obj.stat = fs.lstatSync(file);
                     return obj;
                  });
+                self.contents = entryFiles;
                 packCpio(entryFiles, self.cpioFile, next);
         });
     }
@@ -156,6 +188,7 @@ function packCpio(entryFiles, cpioFile, next) {
     });
     pack.finalize();
     pack
+       .pipe(zlib.createGzip()) //zip here ?
        .pipe(fstream.Writer(cpioFile))
        .on('close', _end)
        .on('error', _error)
