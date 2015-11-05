@@ -76,7 +76,7 @@ Rpm.prototype = {
         header.createEntry("PAYLOADFORMAT", "cpio");
         // header.createEntry("PAYLOADFORMAT", "tar");
         header.createEntry("PAYLOADCOMPRESSOR", "gzip");
-        header.createEntry("NAME", "wow211");
+        header.createEntry("NAME", "wow21122");
         header.createEntry("VERSION", "1.0");
         header.createEntry("RELEASE", "1");
         // header.createEntry("EPOCH", 0);
@@ -93,7 +93,7 @@ Rpm.prototype = {
         header.createEntry("PAYLOADFLAGS", "9");
         header.createEntry("SIZE", stat.size);
         
-        header.createEntry("GROUP",  "Miscellaneous");
+        // header.createEntry("GROUP",  "Miscellaneous");
 
         var dirNames = this.contents.map(function (c) {
             return c.dirname;
@@ -121,9 +121,9 @@ Rpm.prototype = {
         header.createEntry("DIRNAMES", ["/app/webapp/good/"]);
         // header.createEntry("DIRNAMES", ["/ivi/app/com.yourdomain.app/"]);
 
-        header.createEntry("FILESIZES", fileSizes);
-        header.createEntry("FILEINODES", fileINodes);
-        header.createEntry("FILEMODES", fileModes);
+        // header.createEntry("FILESIZES", fileSizes);
+        // header.createEntry("FILEINODES", fileINodes);
+        // header.createEntry("FILEMODES", fileModes);
         
         this.rpmStream.append(header.getBuffer());
         next();
@@ -227,7 +227,7 @@ var opts = {
     },
     'rpm': {
         outDir: __dirname,
-        outFileName : 'wow_kkk.rpm'
+        outFileName : 'wow21122.rpm'
     }
 };
 new Rpm(opts).exec();
