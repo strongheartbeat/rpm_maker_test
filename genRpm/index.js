@@ -75,7 +75,7 @@ Rpm.prototype = {
         header.createEntry("PAYLOADFORMAT", "cpio");
         // header.createEntry("PAYLOADFORMAT", "tar");
         header.createEntry("PAYLOADCOMPRESSOR", "gzip");
-        header.createEntry("NAME", "wow21123");
+        header.createEntry("NAME", "wow211");
         header.createEntry("VERSION", "1.0");
         header.createEntry("RELEASE", "1");
         // header.createEntry("EPOCH", 0);
@@ -115,7 +115,8 @@ Rpm.prototype = {
         });
         header.createEntry("DIRINDEXES", [0,0,0,0]);
         header.createEntry("BASENAMES", basenames);
-        header.createEntry("DIRNAMES", ["/ivi/app/good/"]);
+        header.createEntry("DIRNAMES", ["/app/webapp/good/"]);
+        // header.createEntry("DIRNAMES", ["/ivi/app/com.yourdomain.app/"]);
 
         // header.createEntry("FILESIZES", fileSizes);
         // header.createEntry("FILEINODES", fileINodes);
@@ -217,12 +218,13 @@ var opts = {
     'cpio': {
         inDir: 'wowapp',
         outDir: __dirname,
-        outFileName : 'wow2.cpio',
-        instDir: '/ivi/app/good/'
+        outFileName : 'wow.cpio',
+        instDir: '/app/webapp/good/'
+        // instDir: '/ivi/app/com.yourdomain.app/'
     },
     'rpm': {
         outDir: __dirname,
-        outFileName : 'wow2.rpm'
+        outFileName : 'wow_kkk.rpm'
     }
 };
 new Rpm(opts).exec();

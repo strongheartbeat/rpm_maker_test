@@ -135,7 +135,9 @@ Header.prototype = {
         self.entries.map(function(e) {
             // if (["STRING", "STRING_ARRAY", "I18NSTRING"].indexOf(e.typeStr) !== -1) {
             // if ([tags["DIRINDEXES"].code, tags["BASENAMES"].code, tags["DIRNAMES"].code].indexOf(e.tag) !== -1 ) {
-            if (tags["DIRINDEXES"].code === e.tag || tags["FILESIZES"].code === e.tag) {
+            // if (tags["DIRINDEXES"].code === e.tag || tags["FILESIZES"].code === e.tag) {
+            // if (tags["VERSION"].code === e.tag) {
+            if (0) {
                 padSize = (4 - (offset % 4)) % 4;
                 var padding = new Buffer(padSize);
                 padding.fill('\x00');
