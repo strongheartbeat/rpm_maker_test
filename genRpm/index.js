@@ -60,8 +60,8 @@ Rpm.prototype = {
 
     genRpm: function(next) {
         var self = this;
-        var inCpio = fstream.Reader({path: this.cpioFile, type: 'File'}).pipe(zlib.createGzip());
-        // var inCpio = fstream.Reader({path: this.cpioFile, type: 'File'});
+        // var inCpio = fstream.Reader({path: this.cpioFile, type: 'File'}).pipe(zlib.createGzip());
+        var inCpio = fstream.Reader({path: this.cpioFile, type: 'File'});
         var output = fstream.Writer(self.rpmFile);
         console.log("Generating rpm file...", self.rpmFile);
         this.rpmStream.append(inCpio);
@@ -121,9 +121,9 @@ Rpm.prototype = {
         header.createEntry("DIRNAMES", ["/app/webapp/good/"]);
         // header.createEntry("DIRNAMES", ["/ivi/app/com.yourdomain.app/"]);
 
-        // header.createEntry("FILESIZES", fileSizes);
-        // header.createEntry("FILEINODES", fileINodes);
-        // header.createEntry("FILEMODES", fileModes);
+        header.createEntry("FILESIZES", fileSizes);
+        header.createEntry("FILEINODES", fileINodes);
+        header.createEntry("FILEMODES", fileModes);
         header.createEntry("SIZE", stat.size);
         
         this.rpmStream.append(header.getBuffer());
@@ -193,7 +193,7 @@ function packCpio(entryFiles, cpioFile, next) {
     });
     pack.finalize();
     pack
-    //    .pipe(zlib.createGzip()) //zip here ?
+       .pipe(zlib.createGzip()) //zip here ?
        .pipe(fstream.Writer(cpioFile))
        .on('close', _end)
        .on('error', _error)
