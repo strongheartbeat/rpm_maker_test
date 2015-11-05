@@ -132,12 +132,14 @@ Header.prototype = {
         var storeBuffers = [];
         var offset = 0
             , padSize = 0;
+        var prevStr = false;
         self.entries.map(function(e) {
             // if (["STRING", "STRING_ARRAY", "I18NSTRING"].indexOf(e.typeStr) !== -1) {
             // if ([tags["DIRINDEXES"].code, tags["BASENAMES"].code, tags["DIRNAMES"].code].indexOf(e.tag) !== -1 ) {
             // if (tags["DIRINDEXES"].code === e.tag || tags["FILESIZES"].code === e.tag) {
             // if (tags["VERSION"].code === e.tag) {
-            if (0) {
+            // if (0) {
+            if (prevStr === true && (["STRING", "STRING_ARRAY", "I18NSTRING"].indexOf(e.typeStr) === -1)) {
                 padSize = (4 - (offset % 4)) % 4;
                 var padding = new Buffer(padSize);
                 padding.fill('\x00');
@@ -151,7 +153,8 @@ Header.prototype = {
             if (["STRING", "STRING_ARRAY", "I18NSTRING"].indexOf(e.typeStr) !== -1) {
                 storeBuffers.push(new Buffer('\x00'));
                 offset += 1;
-            }
+                prevStr = true;
+            } else prevStr = false;
         });
 
         //*************** entries (16 bytes * N)

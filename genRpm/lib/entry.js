@@ -77,8 +77,9 @@ function getBufferSize(type, value, count) {
             break;
         case "I18NSTRING":
         case "STRING_ARRAY":
-            if (! value instanceof Array) throw type + " value should be array type. (value: " + value + ").";
-            size = value.join('\0').length;
+            //if (false == (value instanceof Array)) throw type + " value should be array type. (value: " + value + ").";
+            if (value instanceof Array) size = value.join('\0').length;
+            else size = value.length;
             break;
         default:
             count = count || getCount(type, value);

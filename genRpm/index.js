@@ -60,6 +60,7 @@ Rpm.prototype = {
 
     genRpm: function(next) {
         var self = this;
+        // var inCpio = fstream.Reader({path: this.cpioFile, type: 'File'}).pipe(zlib.createGzip());
         var inCpio = fstream.Reader({path: this.cpioFile, type: 'File'});
         var output = fstream.Writer(self.rpmFile);
         console.log("Generating rpm file...", self.rpmFile);
@@ -91,6 +92,8 @@ Rpm.prototype = {
         header.createEntry("LICENSE", "MIT");
         header.createEntry("PAYLOADFLAGS", "9");
         header.createEntry("SIZE", stat.size);
+        
+        header.createEntry("GROUP",  "Miscellaneous");
 
         var dirNames = this.contents.map(function (c) {
             return c.dirname;
@@ -118,10 +121,10 @@ Rpm.prototype = {
         header.createEntry("DIRNAMES", ["/app/webapp/good/"]);
         // header.createEntry("DIRNAMES", ["/ivi/app/com.yourdomain.app/"]);
 
-        // header.createEntry("FILESIZES", fileSizes);
-        // header.createEntry("FILEINODES", fileINodes);
-        // header.createEntry("FILEMODES", fileModes);
-
+        header.createEntry("FILESIZES", fileSizes);
+        header.createEntry("FILEINODES", fileINodes);
+        header.createEntry("FILEMODES", fileModes);
+        
         this.rpmStream.append(header.getBuffer());
         next();
     },
