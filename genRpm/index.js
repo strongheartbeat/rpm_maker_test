@@ -74,9 +74,8 @@ Rpm.prototype = {
         header.createEntry("BUILDTIME", Math.floor(new Date().getTime()/1000));
         header.createEntry("RPMVERSION", "4.4.2");
         header.createEntry("PAYLOADFORMAT", "cpio");
-        // header.createEntry("PAYLOADFORMAT", "tar");
         header.createEntry("PAYLOADCOMPRESSOR", "gzip");
-        header.createEntry("NAME", "wow21122");
+        header.createEntry("NAME", "wow211ABCDEFG");
         header.createEntry("VERSION", "1.0");
         header.createEntry("RELEASE", "1");
         // header.createEntry("EPOCH", 0);
@@ -122,7 +121,7 @@ Rpm.prototype = {
         // header.createEntry("DIRNAMES", ["/ivi/app/com.yourdomain.app/"]);
 
         header.createEntry("FILESIZES", fileSizes);
-        header.createEntry("FILEINODES", fileINodes);
+        // header.createEntry("FILEINODES", fileINodes);
         header.createEntry("FILEMODES", fileModes);
         header.createEntry("SIZE", stat.size);
         
