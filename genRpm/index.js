@@ -8,6 +8,7 @@ var
     , fstream = require('fstream')
     , async = require('async')
     , zlib = require('zlib')
+    , crypto = require('crypto')
     , CombinedStream = require('combined-stream')
     , lead = require('./lib/lead')
     , signature = require('./lib/signature')
@@ -60,8 +61,8 @@ Rpm.prototype = {
 
     genRpm: function(next) {
         var self = this;
-        // var inCpio = fstream.Reader({path: this.cpioFile, type: 'File'}).pipe(zlib.createGzip());
-        var inCpio = fstream.Reader({path: this.cpioFile, type: 'File'});
+        var inCpio = fstream.Reader({path: this.cpioFile, type: 'File'}).pipe(zlib.createGzip());
+        // var inCpio = fstream.Reader({path: this.cpioFile, type: 'File'});
         var output = fstream.Writer(self.rpmFile);
         console.log("Generating rpm file...", self.rpmFile);
         this.rpmStream.append(inCpio);
@@ -75,7 +76,7 @@ Rpm.prototype = {
         header.createEntry("RPMVERSION", "4.4.2");
         header.createEntry("PAYLOADFORMAT", "cpio");
         header.createEntry("PAYLOADCOMPRESSOR", "gzip");
-        header.createEntry("NAME", "wow211ABCDEFG");
+        header.createEntry("NAME", "wowtest");
         header.createEntry("VERSION", "1.0");
         header.createEntry("RELEASE", "1");
         // header.createEntry("EPOCH", 0);
@@ -93,6 +94,7 @@ Rpm.prototype = {
         // header.createEntry("SIZE", stat.size);
         
         // header.createEntry("GROUP",  "Miscellaneous");
+        header.createEntry("GROUP",  "Development/Tools");
 
         var dirNames = this.contents.map(function (c) {
             return c.dirname;
@@ -110,6 +112,7 @@ Rpm.prototype = {
             return c.stat.ino;
         });
         var fileModes = this.contents.map(function (c) {
+            // console.log("c.stat:", c.stat);
             return c.stat.mode;
         });
         var instPaths = this.contents.map(function (c) {
@@ -117,12 +120,17 @@ Rpm.prototype = {
         });
         header.createEntry("DIRINDEXES", [0,0,0,0]);
         header.createEntry("BASENAMES", basenames);
-        header.createEntry("DIRNAMES", ["/app/webapp/good/"]);
+        header.createEntry("DIRNAMES", ["/app/webapp/good/"]);        
         // header.createEntry("DIRNAMES", ["/ivi/app/com.yourdomain.app/"]);
 
         header.createEntry("FILESIZES", fileSizes);
         // header.createEntry("FILEINODES", fileINodes);
         header.createEntry("FILEMODES", fileModes);
+        
+        //FILEUSERNAME, FILEGROUPNAME
+        header.createEntry("FILEUSERNAME", ['root','root','root','root']);
+        header.createEntry("FILEGROUPNAME", ['root','root','root','root']);
+        
         header.createEntry("SIZE", stat.size);
         
         this.rpmStream.append(header.getBuffer());
@@ -131,10 +139,24 @@ Rpm.prototype = {
 
     genSignature: function(next) {
         var stat = fs.lstatSync(this.cpioFile);
+        var data = fs.readFileSync(this.cpioFile);
+        var md5 = crypto.createHash('md5');
+        md5.update(data);
+        var hash = md5.digest('hex');
+        console.log("MD5:", hash);
 
-        signature.createEntry("LEGACY_SIGSIZE", stat.size);
+        // signature.createEntry("LEGACY_SIGSIZE", stat.size);
+        var sigSize = (96 + 64 + 4 + 4 + 32) + stat.size;
+        console.log("!!!!!!!!!!!! sigSize:", sigSize, ", payloadSize:", stat.size);
+        signature.createEntry("LEGACY_SIGSIZE", sigSize );
         signature.createEntry("PAYLOADSIZE", stat.size);
+        signature.createEntry("MD5", hash);
         this.rpmStream.append(signature.getBuffer());
+        var padSize = (sigSize % 4 === 0)? 0 : (4 - (sigSize % 4));
+        console.log("!!!!!!!!!!!! padSize:", padSize);
+        var dummyBuf = new Buffer(padSize);
+        dummyBuf.fill('\x00');
+        if (padSize > 0) this.rpmStream.append(dummyBuf);
         next();
     },
 
@@ -192,7 +214,7 @@ function packCpio(entryFiles, cpioFile, next) {
     });
     pack.finalize();
     pack
-       .pipe(zlib.createGzip()) //zip here ?
+    //    .pipe(zlib.createGzip()) //zip here ?
        .pipe(fstream.Writer(cpioFile))
        .on('close', _end)
        .on('error', _error)
@@ -227,7 +249,7 @@ var opts = {
     },
     'rpm': {
         outDir: __dirname,
-        outFileName : 'wow21122.rpm'
+        outFileName : 'wowtest.rpm'
     }
 };
 new Rpm(opts).exec();

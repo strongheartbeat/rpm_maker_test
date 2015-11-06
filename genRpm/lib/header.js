@@ -21,7 +21,8 @@ var tags = {
     , VENDOR: { code: 1011, type: "STRING" }
     , LICENSE: { code: 1014, type: "STRING" }
     , PACKAGER: { code: 1015, type: "STRING" }
-    , GROUP: { code: 1016, type: "I18NSTRING" }
+    // , GROUP: { code: 1016, type: "I18NSTRING" }
+    , GROUP: { code: 1016, type: "STRING" }
     , CHANGELOG: { code: 1017, type: "STRING_ARRAY" }
     , URL: { code: 1020, type: "STRING" }
     , OS: { code: 1021, type: "STRING" }
@@ -139,13 +140,17 @@ Header.prototype = {
             // if (tags["DIRINDEXES"].code === e.tag || tags["FILESIZES"].code === e.tag) {
             // if (tags["VERSION"].code === e.tag) {
             // if (0) {
-            if (prevStr === true && (["STRING", "STRING_ARRAY", "I18NSTRING"].indexOf(e.typeStr) === -1)) {
-                padSize = (4 - (offset % 4)) % 4;
-                var padding = new Buffer(padSize);
-                padding.fill('\x00');
-                storeBuffers.push(padding);
-                console.log("!!!padSizse:", padSize);
-                offset += padSize;
+            // if (prevStr === true && (["STRING", "STRING_ARRAY", "I18NSTRING"].indexOf(e.typeStr) === -1)) {
+            if (prevStr === true && (e.typeStr.indexOf("INT") === 0)) {
+                var typeSize = entry.typeSize[e.typeStr];
+                if (typeSize > 1) {
+                    padSize = (typeSize - (offset % typeSize)) % typeSize;
+                    var padding = new Buffer(padSize);
+                    padding.fill('\x00');
+                    storeBuffers.push(padding);
+                    console.log("!!!padSize:", padSize, ", typeSize:", typeSize);
+                    offset += padSize;
+                }
             }
             e.offset = offset;
             storeBuffers.push(e.buf);
