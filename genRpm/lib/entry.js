@@ -71,9 +71,11 @@ function getBufferSize(type, value, count) {
         case "OPENPGP":
             throw "Not supported (TBD) type: " + type + ", value: " + value;
         case "STRING":
-        case "BIN":
         case "CHAR":
             size = value.length ;    //Adding escape(\0) size
+            break;
+        case "BIN":
+            size = value.length / 2;
             break;
         case "I18NSTRING":
         case "STRING_ARRAY":

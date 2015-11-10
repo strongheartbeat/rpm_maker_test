@@ -221,6 +221,12 @@ function writeToStoreBuf(buf, ent) {
 
     value = (ent.value instanceof Array && writeFunc === 'write')? 
                 ent.value.join('\x00') : ent.value;
+                
+    //BIN
+    if (ent.typeStr === "BIN") {
+        buf[writeFunc](value, 'hex');
+        return;
+    }
 
     if (!(value instanceof Array)) {
         fieldSize = entry.typeSize[ent.typeStr] || value.length;

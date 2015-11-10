@@ -77,6 +77,7 @@ Rpm.prototype = {
         header.createEntry("PAYLOADFORMAT", "cpio");
         header.createEntry("PAYLOADCOMPRESSOR", "gzip");
         header.createEntry("NAME", "wowtest");
+        header.createEntry("SOURCERPM", "wowtest");
         header.createEntry("VERSION", "1.0");
         header.createEntry("RELEASE", "1");
         // header.createEntry("EPOCH", 0);
@@ -150,7 +151,7 @@ Rpm.prototype = {
         console.log("!!!!!!!!!!!! sigSize:", sigSize, ", payloadSize:", stat.size);
         signature.createEntry("LEGACY_SIGSIZE", sigSize );
         signature.createEntry("PAYLOADSIZE", stat.size);
-        signature.createEntry("MD5", hash);
+        // signature.createEntry("LEGACY_MD5", hash);
         this.rpmStream.append(signature.getBuffer());
         var padSize = (sigSize % 4 === 0)? 0 : (4 - (sigSize % 4));
         console.log("!!!!!!!!!!!! padSize:", padSize);
