@@ -97,40 +97,46 @@ Rpm.prototype = {
         // header.createEntry("GROUP",  "Miscellaneous");
         header.createEntry("GROUP",  "Development/Tools");
 
-        var dirNames = this.contents.map(function (c) {
-            return c.dirname;
+        var uniqDirNames = []
+            , baseNames = []
+            , idxDirs = []
+            , fileSizes = []
+            , fileINodes = []
+            , fileModes = []
+            , instPaths = []
+            
+        this.contents.forEach(function(c) {
+            if (uniqDirNames.indexOf(c.dirname) === -1) {
+                uniqDirNames.push(c.dirname);
+            }
+            idxDirs.push(uniqDirNames.indexOf(c.dirname));
+            baseNames.push(c.basename);
+            // if (c.basename === 'index.html') { console.log("c.stat:", c.stat);}
+            fileSizes.push(c.stat.size);
+            fileINodes.push(c.stat.ino);
+            fileModes.push(c.stat.mode);
+            instPaths.push(c.instPath);
         });
-        var basenames = this.contents.map(function (c) {
-            return c.basename;
-        });
-        var idxDirs = Object.keys(basenames).map(function(i){
-            return parseInt(i);
-        });
-        var fileSizes = this.contents.map(function (c) {
-            return c.stat.size;
-        });
-        var fileINodes = this.contents.map(function (c) {
-            return c.stat.ino;
-        });
-        var fileModes = this.contents.map(function (c) {
-            // console.log("c.stat:", c.stat);
-            return c.stat.mode;
-        });
-        var instPaths = this.contents.map(function (c) {
-            return c.instPath;
-        });
-        header.createEntry("DIRINDEXES", [0,0,0,0]);
-        header.createEntry("BASENAMES", basenames);
-        header.createEntry("DIRNAMES", ["/app/webapp/good/"]);        
+        
+        //FILEUSERNAME, FILEGROUPNAME
+        var fileOwners = Array.apply(null, {length: baseNames.length}).map(function(){return 'root'});
+        // console.log("this.contents.length:", this.contents.length);
+        header.createEntry("FILEUSERNAME", fileOwners);
+        header.createEntry("FILEGROUPNAME", fileOwners);
+                
+        
+        console.log("baseNames:", baseNames);
+        console.log("uniqDirNames:", uniqDirNames);
+        console.log("idxDirs:", idxDirs);
+        // console.log("baseNames:", baseNames);
+        header.createEntry("DIRINDEXES", idxDirs);     
+        header.createEntry("BASENAMES", baseNames);
+        header.createEntry("DIRNAMES", uniqDirNames);   
         // header.createEntry("DIRNAMES", ["/ivi/app/com.yourdomain.app/"]);
 
         header.createEntry("FILESIZES", fileSizes);
         // header.createEntry("FILEINODES", fileINodes);
         header.createEntry("FILEMODES", fileModes);
-        
-        //FILEUSERNAME, FILEGROUPNAME
-        header.createEntry("FILEUSERNAME", ['root','root','root','root']);
-        header.createEntry("FILEGROUPNAME", ['root','root','root','root']);
         
         header.createEntry("SIZE", stat.size);
         
@@ -153,11 +159,11 @@ Rpm.prototype = {
         signature.createEntry("PAYLOADSIZE", stat.size);
         // signature.createEntry("LEGACY_MD5", hash);
         this.rpmStream.append(signature.getBuffer());
-        var padSize = (sigSize % 4 === 0)? 0 : (4 - (sigSize % 4));
-        console.log("!!!!!!!!!!!! padSize:", padSize);
-        var dummyBuf = new Buffer(padSize);
-        dummyBuf.fill('\x00');
-        if (padSize > 0) this.rpmStream.append(dummyBuf);
+        // var padSize = (sigSize % 4 === 0)? 0 : (4 - (sigSize % 4));
+        // console.log("!!!!!!!!!!!! padSize:", padSize);
+        // var dummyBuf = new Buffer(padSize);
+        // dummyBuf.fill('\x00');
+        // if (padSize > 0) this.rpmStream.append(dummyBuf);
         next();
     },
 
@@ -187,12 +193,34 @@ Rpm.prototype = {
     genCpio: function(next) {
         var self = this;
         console.log("preparing cpio packing for", this.inDir);
+        /*
+        walk(this.inDir, function(err, files) {
+            console.log("???? files:", files);
+                entryFiles = files.map(function(file) {
+                    obj = {};
+                    var relPath = path.relative(self.inDir, path.dirname(file));
+                    relPath = (relPath === '')? relPath : relPath + '/';
+                    obj.dirname = path.join(self.instDir, relPath).replace(/[\\]/g,'/');
+                    obj.basename = path.basename(file);
+                    obj.instPath = path.join(obj.dirname, obj.basename).replace(/[\\]/g,'/');
+                    obj.origPath = file;
+                    obj.stat = fs.lstatSync(file);
+                    return obj;
+                 });
+                self.contents = entryFiles;
+                packCpio(entryFiles, self.cpioFile, next);
+        });
+        */
         recursive(this.inDir, function(err, files) {
                 entryFiles = files.map(function(file) {
                     obj = {};
-                    obj.dirname = self.instDir;
+                    var relPath = path.relative(self.inDir, path.dirname(file));
+                    relPath = (relPath === '')? relPath : relPath + '/';
+                    obj.dirname = path.join(self.instDir, relPath).replace(/[\\]/g,'/');
+                    // obj.dirname = path.join(self.instDir, path.dirname(file)).replace(/[\\]/g,'/');
+                    // console.log("[!!]:", obj.dirname);
                     obj.basename = path.basename(file);
-                    obj.instPath = obj.dirname + obj.basename;
+                    obj.instPath = path.join(obj.dirname, obj.basename).replace(/[\\]/g,'/');
                     obj.origPath = file;
                     obj.stat = fs.lstatSync(file);
                     return obj;
@@ -237,6 +265,30 @@ function writeHeaderToBuf(prot, buf, fName, value) {
     var writeFunc = (typeof value === 'string')? 'write' : 'writeUIntBE';
     buf[writeFunc](value, fieldOff, fieldSize);
 }
+
+function walk(dir, done) {
+  var results = [];
+  fs.readdir(dir, function(err, list) {
+    if (err) return done(err);
+    var i = 0;
+    (function next() {
+      var file = list[i++];
+      if (!file) return done(null, results);
+      file = dir + '/' + file;
+      fs.stat(file, function(err, stat) {
+                    results.push(file);
+        if (stat && stat.isDirectory()) {
+          walk(file, function(err, res) {
+            results = results.concat(res);
+            next();
+          });
+        } else {
+          next();
+        }
+      });
+    })();
+  });
+};
 
 module.exports = Rpm;
 
