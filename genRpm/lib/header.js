@@ -85,7 +85,7 @@ var tags = {
     , FILEUSERNAME: { code: 1039, type: "STRING_ARRAY" } //FILE
     , FILEGROUPNAME: { code: 1040, type: "STRING_ARRAY" } //FILE
     , FILEDEVICES: { code: 1095, type: "INT32" } //FILE
-    , FILEINODES: { code: 1096, type: "INT64" } //FILE
+    , FILEINODES: { code: 1096, type: "INT32" } //FILE
     , FILELANGS: { code: 1097, type: "STRING_ARRAY" } //FILE
     , PREFIXES: { code: 1098, type: "STRING_ARRAY" }
     , DIRINDEXES: { code: 1116, type: "INT32" } //FILE
@@ -120,7 +120,7 @@ Header.prototype = {
         e.value = value;
         e.count = entry.getCount(e.typeStr, e.value);
         e.bufSize = entry.getBufferSize(e.typeStr, e.value, e.count);
-                console.log("e.typeStr:", e.typeStr, ",value:", value, ",e.count:", e.count, ",e.bufSize:", e.bufSize);
+                // console.log("e.typeStr:", e.typeStr, ",value:", value, ",e.count:", e.count, ",e.bufSize:", e.bufSize);
         e.buf = new Buffer(e.bufSize);
         e.buf.fill('\x00');
         writeToStoreBuf(e.buf, e);
@@ -148,7 +148,7 @@ Header.prototype = {
                     var padding = new Buffer(padSize);
                     padding.fill('\x00');
                     storeBuffers.push(padding);
-                    console.log("!!!padSize:", padSize, ", typeSize:", typeSize);
+                    // console.log("!!!padSize:", padSize, ", typeSize:", typeSize);
                     offset += padSize;
                 }
             }

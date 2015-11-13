@@ -13,6 +13,7 @@ var
     , lead = require('./lib/lead')
     , signature = require('./lib/signature')
     , header = require('./lib/header')
+    , tar = require('tar')
 
 
 // Logic
@@ -50,6 +51,7 @@ Rpm.prototype = {
         console.log("Run rpm...", this.inDir);
         async.series([
             this.genCpio.bind(this),
+            // this.genTar.bind(this),
             this.genLead.bind(this),
             this.genSignature.bind(this),
             this.genHeader.bind(this),
@@ -75,6 +77,7 @@ Rpm.prototype = {
         header.createEntry("BUILDTIME", Math.floor(new Date().getTime()/1000));
         header.createEntry("RPMVERSION", "4.4.2");
         header.createEntry("PAYLOADFORMAT", "cpio");
+        // header.createEntry("PAYLOADFORMAT", "tar");
         header.createEntry("PAYLOADCOMPRESSOR", "gzip");
         header.createEntry("NAME", "wowtest");
         header.createEntry("SOURCERPM", "wowtest");
@@ -106,6 +109,7 @@ Rpm.prototype = {
             , instPaths = []
             
         this.contents.forEach(function(c) {
+            console.log("c.stat:", c.stat);
             if (uniqDirNames.indexOf(c.dirname) === -1) {
                 uniqDirNames.push(c.dirname);
             }
@@ -135,7 +139,7 @@ Rpm.prototype = {
         // header.createEntry("DIRNAMES", ["/ivi/app/com.yourdomain.app/"]);
 
         header.createEntry("FILESIZES", fileSizes);
-        // header.createEntry("FILEINODES", fileINodes);
+        header.createEntry("FILEINODES", fileINodes);
         header.createEntry("FILEMODES", fileModes);
         
         header.createEntry("SIZE", stat.size);
@@ -189,11 +193,51 @@ Rpm.prototype = {
         this.rpmStream.append(buf);
         next();
     },
+    
+    genTar: function(next) {
+        var self = this;
+        var appDir = self.inDir;
+        var tarFile = self.cpioFile;
+        
+        recursive(this.inDir, function(err, files) {
+                var entryFiles = files.map(function(file) {
+                    obj = {};
+                    var relPath = path.relative(self.inDir, path.dirname(file));
+                    relPath = (relPath === '')? relPath : relPath + '/';
+                    obj.dirname = path.join(self.instDir, relPath).replace(/[\\]/g,'/');
+                    // obj.dirname = path.join(self.instDir, path.dirname(file)).replace(/[\\]/g,'/');
+                    // console.log("[!!]:", obj.dirname);
+                    obj.basename = path.basename(file);
+                    obj.instPath = path.join(obj.dirname, obj.basename).replace(/[\\]/g,'/');
+                    obj.origPath = file;
+                    obj.stat = fs.lstatSync(file);
+                    return obj;
+                 });
+                self.contents = entryFiles;
+                
+                fstream
+                    .Reader( {path: appDir, type: 'Directory'})
+                    .pipe(tar.Pack({}))
+                    // .pipe(zlib.createGzip()) //zip here ?
+                    .pipe(fstream.Writer(tarFile))
+                    .on('close', _end)
+                    .on('error', _error)
+                    ;
+                
+                    function _end() {
+                        console.log("tar packing end...");
+                        next();
+                    }
+                    function _error(e) {
+                        console.error("tar packing error:", e);
+                        next(e);
+                    }
+        });
+    },
 
     genCpio: function(next) {
         var self = this;
         console.log("preparing cpio packing for", this.inDir);
-        /*
         walk(this.inDir, function(err, files) {
             console.log("???? files:", files);
                 entryFiles = files.map(function(file) {
@@ -210,7 +254,7 @@ Rpm.prototype = {
                 self.contents = entryFiles;
                 packCpio(entryFiles, self.cpioFile, next);
         });
-        */
+        /*
         recursive(this.inDir, function(err, files) {
                 entryFiles = files.map(function(file) {
                     obj = {};
@@ -228,6 +272,7 @@ Rpm.prototype = {
                 self.contents = entryFiles;
                 packCpio(entryFiles, self.cpioFile, next);
         });
+        */
     }
 }
 
@@ -239,7 +284,11 @@ function packCpio(entryFiles, cpioFile, next) {
     entryFiles.forEach(function(c) {
            c.stat.nameSize = c.instPath.length;
            c.stat.name = c.instPath;
-           pack.entry(c.stat, fs.readFileSync(c.origPath));
+           if (c.stat.isDirectory()) {
+                // console.log("COME!!");
+           } else {
+                pack.entry(c.stat, fs.readFileSync(c.origPath));
+           }
     });
     pack.finalize();
     pack
