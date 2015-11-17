@@ -16,6 +16,10 @@ var
     , tar = require('tar')
 
 
+process.on('uncaughtException', function(err) {
+   console.log(err.stack); 
+});
+
 // Logic
 //   Make cpio
 //   Make rpm
@@ -55,20 +59,36 @@ Rpm.prototype = {
             this.genLead.bind(this),
             this.genSignature.bind(this),
             this.genHeader.bind(this),
-            this.genRpm.bind(this)
+            this.genRpm.bind(this),
+            function(next) {
+                console.log("Hang!");
+                next();
+            }
         ], function(err, results) {
-            console.log("async end...");
+            console.log("async end...err:", err);
+            process.exit(0);
         });
     },
 
     genRpm: function(next) {
         var self = this;
-        var inCpio = fstream.Reader({path: this.cpioFile, type: 'File'}).pipe(zlib.createGzip());
-        // var inCpio = fstream.Reader({path: this.cpioFile, type: 'File'});
+        // var inCpio = fstream.Reader({path: self.cpioFile, type: 'File'}).pipe(zlib.createGzip());
+        var inCpio = fstream.Reader({path: this.cpioFile, type: 'File'});
         var output = fstream.Writer(self.rpmFile);
         console.log("Generating rpm file...", self.rpmFile);
-        this.rpmStream.append(inCpio);
-        this.rpmStream.pipe(output);
+        self.rpmStream.append(inCpio);
+        self.rpmStream.pipe(output);
+        
+        output.on("close", function(exit) {
+                console.log("exit:", exit);
+                // setTimeout(function() {
+                //     console.log("no!!!!");
+                // }, 15000);
+                next();
+            })
+            .on("error", function(err) {
+                console.log("err:", err);
+            });
     },
 
     genHeader: function(next) {
@@ -88,7 +108,7 @@ Rpm.prototype = {
         header.createEntry("DESCRIPTION", ["This is test description"]);
 
         header.createEntry("BUILDHOST", "localhost");
-        // header.createEntry("SIZE", stat.size);
+        header.createEntry("SIZE", stat.size);
         header.createEntry("ARCH", "noarch");
         header.createEntry("OS", "linux");
         header.createEntry("PLATFORM", "noarch-linux");
@@ -109,13 +129,15 @@ Rpm.prototype = {
             , instPaths = []
             
         this.contents.forEach(function(c) {
-            console.log("c.stat:", c.stat);
+            // console.log("c.stat:", c.stat);
             if (uniqDirNames.indexOf(c.dirname) === -1) {
-                uniqDirNames.push(c.dirname);
+                uniqDirNames.push(c.dirname.trim());
             }
             idxDirs.push(uniqDirNames.indexOf(c.dirname));
-            baseNames.push(c.basename);
-            // if (c.basename === 'index.html') { console.log("c.stat:", c.stat);}
+            // baseNames.push(c.basename);
+            baseNames = baseNames.concat(c.basename);
+            // baseNames.push(path.basename(c.stat.name.replace(/[\0]+$/, '')));
+            console.log("c.dirname:", c.dirname, ",legnth:", c.dirname.length);
             fileSizes.push(c.stat.size);
             fileINodes.push(c.stat.ino);
             fileModes.push(c.stat.mode);
@@ -129,9 +151,9 @@ Rpm.prototype = {
         header.createEntry("FILEGROUPNAME", fileOwners);
                 
         
-        console.log("baseNames:", baseNames);
-        console.log("uniqDirNames:", uniqDirNames);
-        console.log("idxDirs:", idxDirs);
+        // console.log("baseNames:", baseNames);
+        // console.log("uniqDirNames:", uniqDirNames);
+        // console.log("idxDirs:", idxDirs);
         // console.log("baseNames:", baseNames);
         header.createEntry("DIRINDEXES", idxDirs);     
         header.createEntry("BASENAMES", baseNames);
@@ -142,7 +164,7 @@ Rpm.prototype = {
         header.createEntry("FILEINODES", fileINodes);
         header.createEntry("FILEMODES", fileModes);
         
-        header.createEntry("SIZE", stat.size);
+        // header.createEntry("SIZE", stat.size);
         
         this.rpmStream.append(header.getBuffer());
         next();
@@ -238,8 +260,9 @@ Rpm.prototype = {
     genCpio: function(next) {
         var self = this;
         console.log("preparing cpio packing for", this.inDir);
+        /*
         walk(this.inDir, function(err, files) {
-            console.log("???? files:", files);
+            // console.log("???? files:", files);
                 entryFiles = files.map(function(file) {
                     obj = {};
                     var relPath = path.relative(self.inDir, path.dirname(file));
@@ -254,7 +277,8 @@ Rpm.prototype = {
                 self.contents = entryFiles;
                 packCpio(entryFiles, self.cpioFile, next);
         });
-        /*
+        */
+        
         recursive(this.inDir, function(err, files) {
                 entryFiles = files.map(function(file) {
                     obj = {};
@@ -272,7 +296,7 @@ Rpm.prototype = {
                 self.contents = entryFiles;
                 packCpio(entryFiles, self.cpioFile, next);
         });
-        */
+        
     }
 }
 
@@ -284,11 +308,15 @@ function packCpio(entryFiles, cpioFile, next) {
     entryFiles.forEach(function(c) {
            c.stat.nameSize = c.instPath.length;
            c.stat.name = c.instPath;
-           if (c.stat.isDirectory()) {
-                // console.log("COME!!");
-           } else {
-                pack.entry(c.stat, fs.readFileSync(c.origPath));
-           }
+        //    if (path.basename(c.stat.name) == "largeIcon.png") {console.log("??"); c.stat.name += '\x00'; c.stat.nameSize+=1 }; 
+           pack.entry(c.stat, fs.readFileSync(c.origPath));
+           
+        //    if (c.stat.isDirectory()) {
+        //         pack.entry(c.stat, null);
+        //    } else {
+        //         pack.entry(c.stat, fs.readFileSync(c.origPath));
+        //    }
+           
     });
     pack.finalize();
     pack
@@ -354,4 +382,5 @@ var opts = {
         outFileName : 'wowtest.rpm'
     }
 };
-new Rpm(opts).exec();
+var rpmTest = new Rpm(opts);
+rpmTest.exec();
