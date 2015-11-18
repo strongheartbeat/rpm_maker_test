@@ -81,9 +81,6 @@ Rpm.prototype = {
         
         output.on("close", function(exit) {
                 console.log("exit:", exit);
-                // setTimeout(function() {
-                //     console.log("no!!!!");
-                // }, 15000);
                 next();
             })
             .on("error", function(err) {
@@ -127,6 +124,10 @@ Rpm.prototype = {
             , fileINodes = []
             , fileModes = []
             , instPaths = []
+        function _orderByPathName(a, b) {
+            return (a.instPath > b.instPath)? 1 : -1; 
+        }
+        this.contents.sort(_orderByPathName);
             
         this.contents.forEach(function(c) {
             // console.log("c.stat:", c.stat);
@@ -135,9 +136,10 @@ Rpm.prototype = {
             }
             idxDirs.push(uniqDirNames.indexOf(c.dirname));
             // baseNames.push(c.basename);
+            // if (c.basename === "index.html") { c.basename += '\x00\x00'; }
             baseNames = baseNames.concat(c.basename);
             // baseNames.push(path.basename(c.stat.name.replace(/[\0]+$/, '')));
-            console.log("c.dirname:", c.dirname, ",legnth:", c.dirname.length);
+            // console.log("c.dirname:", c.dirname, ",legnth:", c.dirname.length);
             fileSizes.push(c.stat.size);
             fileINodes.push(c.stat.ino);
             fileModes.push(c.stat.mode);
@@ -306,9 +308,9 @@ function packCpio(entryFiles, cpioFile, next) {
     var pack = new PackNewc({"cpioCodec" : newc });
 
     entryFiles.forEach(function(c) {
-           c.stat.nameSize = c.instPath.length;
-           c.stat.name = c.instPath;
-        //    if (path.basename(c.stat.name) == "largeIcon.png") {console.log("??"); c.stat.name += '\x00'; c.stat.nameSize+=1 }; 
+           c.stat.nameSize = c.instPath.length + 1;
+           c.stat.name = '.' + c.instPath;
+           if (path.basename(c.stat.name) == "appinfo.json") {console.log(c.stat); }; 
            pack.entry(c.stat, fs.readFileSync(c.origPath));
            
         //    if (c.stat.isDirectory()) {
@@ -374,7 +376,7 @@ var opts = {
         inDir: 'wowapp',
         outDir: __dirname,
         outFileName : 'wow.cpio',
-        instDir: '/app/webapp/good/'
+        instDir: '/app/webapp/wowtest/'
         // instDir: '/ivi/app/com.yourdomain.app/'
     },
     'rpm': {
